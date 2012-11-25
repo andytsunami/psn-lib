@@ -161,3 +161,9 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+package-info.java
+.checkstyle
+/src/main/java/Test.java
+/src/main/java/UnitTest.java
+
