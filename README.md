@@ -3,7 +3,7 @@ Copyright 2012 Kroboth Software
 
 License [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 
-Sony hasn't published a _public_ API interface that retrieving psn info so developers have to make their own implementation. Some examples are
+Sony hasn't published a _public_ API interface for retrieving psn info so developers have to make their own implementation. Some examples are
 * http://www.psnapi.com.ar/
 * http://www.psnapi.com/
 * http://psnapi.codeplex.com/
@@ -36,7 +36,7 @@ try {
 	// IO Exception
 }
 ````
-This will retrieve 
+This will retrieve UK and US login cookies, userinfo, Jid, and return PsnId.
 
 **Client Friends**
 ````java
@@ -61,7 +61,7 @@ psnClient.getPublicGameList("psnId");
 	// IO Exception
 }
 ````
-`getPublicTrophyList()` does however need US Login to get _TICKET_ and _PSNS2STICKET_ cookies. `clientLogin` will get these cookies. Both cookies are static meaning they don't change value so it's possible to generate them and insert into `CookieManager`. Methods `PsnUtils.createLoginCookieTicket()` and `PsnUtils.createLoginCookiePsnTicket()` will create them based on any valid psnId. Note that psnId used for cookies doesn't have to same as one being used in _getPublicTrophyList_
+`getPublicTrophyList()` does however need US Login to get _TICKET_ and _PSNS2STICKET_ cookies. `clientLogin` will get these cookies automatically. Both cookies are static meaning they don't change value so it's possible to generate them and insert into `CookieManager`. Methods `PsnUtils.createLoginCookieTicket()` and `PsnUtils.createLoginCookiePsnTicket()` will create them based on any valid psnId. Note that psnId used for cookies doesn't have to same as one being used in _getPublicTrophyList_
 
 **Official Games**
 ````java
