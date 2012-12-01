@@ -85,12 +85,12 @@ try {
 }
 ````
 
-**Trophy Link Id** refers to link Id for game on UK and US websites. 
+**Title Link Id** refers to link Id for game on UK and US websites. 
 `http://us.playstation.com/playstation/psn/profile/trophies/582938-Warhawk`
 Id is **582938-Warhawk**.
 `http://uk.playstation.com/psn/mypsn/trophies/detail/?title=4`
 Id is **4**.
-It can also be retrieved by `PsnGameData.getTrophyLinkId()`
+It can also be retrieved by `PsnGameData.getTitleLinkId()`
 
 ##Network
 The client uses `com.krobothsoftware.commons.network` package as a helper for doing network connections, handling cookies, and authorizations.
@@ -111,7 +111,54 @@ networkHelper.setDefaultReadTimeout(5000); // millisecond
 ````
 Set-Default methods set value only if request connection hasn't set it; _set if not set_
 
+````java
+ConnectionListener connListener = new ConnectionListener() {
+
+	@Override
+	public void onRequest(RequestBuilder builder) {
+		// called right before connection is set up
+	}
+
+	@Override
+	public void onFinish(URL url, HttpURLConnection connection) {
+		// called after connection successfully or failed to connect
+
+	}
+
+};
+
+networkHelper.addConnectionListener(connListener);
+````
+Listening on connections for `networkHelper`
+
+**Default Headers used**
+<table>
+<tr>
+<td>User-Agent</td>
+<td>AGENT_DEFAULT</td>
+</tr>
+<tr>
+<td>Accept</td>
+<td>text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2</td>
+</tr>
+<tr>
+<td>Accept-Encoding</td>
+<td>gzip, deflate</td>
+</tr>
+<tr>
+<td>Accept-Charset</td>
+<td>UTF-8</td>
+</tr>
+</table>
+`AGENT_DEFAULT` is different depending on OS, and platform
+````
+NetworkHelper/3.0.1 (Windows 7 6.1; Java 1.7.0_09)
+NetworkHelper/3.0.1 (Linux 3.0.31-00001-gf84bc96; samsung SCH-I500; Android 4.1.1)
+````
+
 ##How to set up
-Go to [Downloads](https://github.com/KrobothSoftware/psn-lib/downloads) and get lastest release. It includes library, source, and Javadoc. This project depends on the following libraries
+Go to [Downloads](https://github.com/KrobothSoftware/psn-lib/downloads) and get lastest release. It includes library, source, Javadoc, and dependencies, This project depends on the following libraries
 * [Html-Cleaner](http://htmlcleaner.sourceforge.net/) - For parsing Html Data(websites)
 * [SLF4J](http://www.slf4j.org/) - Logging library
+
+There are two `krobothcommons-vXXX.jar`, one is for Android and other is SE. Make sure only to use one!
