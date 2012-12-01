@@ -37,7 +37,6 @@ public class PsnGameDataOfficial extends PsnModel implements PsnGame, Jid {
 	private final String jid;
 	private final String npCommid;
 	private final PlatformType pf;
-	private final int trophies;
 	private final int platinum;
 	private final int gold;
 	private final int silver;
@@ -49,7 +48,6 @@ public class PsnGameDataOfficial extends PsnModel implements PsnGame, Jid {
 		jid = builder.userId;
 		npCommid = builder.gameId;
 		pf = builder.pf;
-		trophies = builder.trophies;
 		platinum = builder.platinum;
 		gold = builder.gold;
 		silver = builder.silver;
@@ -72,13 +70,8 @@ public class PsnGameDataOfficial extends PsnModel implements PsnGame, Jid {
 	}
 
 	@Override
-	public String getTrophyLinkId() {
+	public String getTitleLinkId() {
 		return null;
-	}
-
-	@Override
-	public int getTrophyCount() {
-		return trophies;
 	}
 
 	@Override

@@ -23,6 +23,7 @@ import java.util.List;
 import org.htmlcleaner.TagNode;
 
 import com.krobothsoftware.commons.parse.HandlerHtml;
+import com.krobothsoftware.psn.PsnUtils;
 import com.krobothsoftware.psn.model.PsnGameData;
 
 /**
@@ -51,17 +52,13 @@ public final class HandlerWebUSGame extends HandlerHtml {
 				"class", "slot", true, false);
 
 		for (final TagNode gameTag : gameDivs) {
-			String trophyLinkId = gameTag.findElementByName("A", true)
+			String titleLinkId = gameTag.findElementByName("A", true)
 					.getAttributeByName("HREF");
-			trophyLinkId = trophyLinkId.substring(
-					trophyLinkId.indexOf("trophies/") + 9,
-					trophyLinkId.length());
+			titleLinkId = titleLinkId.substring(
+					titleLinkId.indexOf("trophies/") + 9, titleLinkId.length());
 			final String gameImage = gameTag.findElementByName("IMG", true)
 					.getAttributeByName("SRC");
-			String npCommid = gameImage.substring(
-					gameImage.indexOf("trophy/np/") + 10,
-					gameImage.indexOf("_00_"));
-			npCommid += "_00";
+			String npCommid = PsnUtils.getGameIdOf(gameImage);
 			final String gameTitle = gameTag
 					.findElementByAttValue("class", "gameTitleSortField", true,
 							false).getText().toString();
@@ -86,8 +83,7 @@ public final class HandlerWebUSGame extends HandlerHtml {
 							.setProgress(progress).setGameId(npCommid)
 							.setPlatinum(platinum).setGold(gold)
 							.setSilver(silver).setBronze(bronze)
-							.setTrophies(platinum + gold + silver + bronze)
-							.setTrophyLinkId(trophyLinkId).build());
+							.setTitleLinkId(titleLinkId).build());
 
 		}
 

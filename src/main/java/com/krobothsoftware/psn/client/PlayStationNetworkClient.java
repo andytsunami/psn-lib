@@ -44,6 +44,7 @@ import com.krobothsoftware.commons.network.authorization.AuthorizationManager;
 import com.krobothsoftware.commons.network.authorization.DigestAuthorization;
 import com.krobothsoftware.commons.network.values.Cookie;
 import com.krobothsoftware.commons.network.values.NameValuePair;
+import com.krobothsoftware.commons.parse.ParseException;
 import com.krobothsoftware.commons.parse.Parser;
 import com.krobothsoftware.commons.progress.ProgressHelper;
 import com.krobothsoftware.commons.progress.ProgressListener;
@@ -83,7 +84,7 @@ import com.krobothsoftware.psn.model.PsnUserInfo;
  * official servers</li>
  * </ul>
  * 
- * @version 3.0
+ * @version 3.0.1
  * @since Nov 25 2012
  * @author Kyle Kroboth
  * 
@@ -120,7 +121,7 @@ public class PlayStationNetworkClient {
 	/** PSP Update Agent. */
 	public static final String AGENT_PSP_UPDATE = "PSPUpdate-agent/1.0.0 libhttp/1.0.0";
 
-	/** Current PS3 firmware version as of 12/23/2012 */
+	/** Current PS3 firmware version as of 10/30/12 */
 	public static String PS3_FIRMWARE_VERSION = "4.31";
 
 	private String clientJid;
@@ -224,7 +225,7 @@ public class PlayStationNetworkClient {
 	 * 
 	 * @return user info
 	 */
-	public PsnUserInfo getUserInfo() {
+	public PsnUserInfo getClientUserInfo() {
 		return clientUserInfo;
 	}
 
@@ -504,9 +505,9 @@ public class PlayStationNetworkClient {
 			parser.parse(response.getStream(), friendHandler,
 					response.getCharset());
 			return friendHandler.getFriendList();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getFriendList - Exiting");
@@ -560,13 +561,14 @@ public class PlayStationNetworkClient {
 			if (response.getStatusCode() == HttpURLConnection.HTTP_MOVED_TEMP) throw new PlayStationNetworkLoginException(
 					"login cookies invalid, expired, or not found");
 
-			final HandlerWebUKGame gameHandler = new HandlerWebUKGame(clientJid);
+			final HandlerWebUKGame gameHandler = new HandlerWebUKGame(
+					PsnUtils.getPsnIdFromJid(clientJid));
 			parser.parse(response.getStream(), gameHandler,
 					response.getCharset());
 			return gameHandler.getGameList();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getClientGameList - Exiting");
@@ -599,8 +601,8 @@ public class PlayStationNetworkClient {
 	 * @see PsnUtils#createLoginCookiePdc4(String)
 	 * @see PsnUtils#createLoginCookieToken(String)
 	 * 
-	 * @param trophyLinkId
-	 *            trophy link Id
+	 * @param titleLinkId
+	 *            UK title link Id
 	 * @return client trophy list
 	 * @throws IllegalArgumentException
 	 *             thrown if invalid trophy link Id
@@ -611,14 +613,14 @@ public class PlayStationNetworkClient {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<PsnTrophyData> getClientTrophyList(final String trophyLinkId)
+	public List<PsnTrophyData> getClientTrophyList(final String titleLinkId)
 			throws PlayStationNetworkException,
 			PlayStationNetworkLoginException, IOException {
 		Response response = null;
-		log.debug("getClientTrophyList [{}] - Entering", trophyLinkId);
+		log.debug("getClientTrophyList [{}] - Entering", titleLinkId);
 
-		if (PsnUtils.isValidGameId(trophyLinkId)) throw new IllegalArgumentException(
-				"invalid trophyLinkId: " + trophyLinkId);
+		if (PsnUtils.isValidGameId(titleLinkId)) throw new IllegalArgumentException(
+				"invalid UK title link: " + titleLinkId);
 
 		try {
 			response = networkHelper
@@ -627,7 +629,7 @@ public class PlayStationNetworkClient {
 							new URL(
 									String.format(
 											"http://uk.playstation.com/psn/mypsn/trophies/detail/?title=%s",
-											trophyLinkId)))
+											titleLinkId)))
 					.setHeader("Referer",
 							"http://uk.playstation.com/psn/mypsn/trophies/")
 					.execute(networkHelper);
@@ -635,13 +637,13 @@ public class PlayStationNetworkClient {
 					"login cookies invalid, expired, or not found");
 
 			final HandlerWebUKTrophy trophyHandler = new HandlerWebUKTrophy(
-					clientJid);
+					PsnUtils.getPsnIdFromJid(clientJid));
 			parser.parse(response.getStream(), trophyHandler,
 					response.getCharset());
 			return trophyHandler.getTrophyList();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getClientTrophyList - Exiting");
@@ -709,9 +711,9 @@ public class PlayStationNetworkClient {
 					friendPsnId);
 			parser.parse(response.getStream(), handler, response.getCharset());
 			return handler.getGameList();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkLoginException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getClientFriendGameList - Exiting");
@@ -746,8 +748,8 @@ public class PlayStationNetworkClient {
 	 * 
 	 * @param friendPsnId
 	 *            friend psn id
-	 * @param trophyLinkId
-	 *            UK trophy link id
+	 * @param titleLinkId
+	 *            UK title link id
 	 * @return client friend trophy list
 	 * @throws PlayStationNetworkException
 	 *             thrown if parse error is encountered
@@ -757,12 +759,12 @@ public class PlayStationNetworkClient {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public List<PsnTrophyData> getClientFriendTrophyList(
-			final String friendPsnId, final String trophyLinkId)
+			final String friendPsnId, final String titleLinkId)
 			throws IOException, PlayStationNetworkException,
 			PlayStationNetworkLoginException {
 		Response response = null;
 		log.debug("getClientFriendTrophyList [{}, {}] - Entering", friendPsnId,
-				trophyLinkId);
+				titleLinkId);
 		try {
 			response = networkHelper
 					.setupMethod(
@@ -770,7 +772,7 @@ public class PlayStationNetworkClient {
 							new URL(
 									String.format(
 											"http://uk.playstation.com/psn/mypsn/trophies-compare/detail/?title=%s&friend=%s&sortBy=game",
-											trophyLinkId, friendPsnId)))
+											titleLinkId, friendPsnId)))
 					.setHeader(
 							"Referer",
 							"http://uk.playstation.com/psn/mypsn/trophies-compare/?friend="
@@ -783,9 +785,9 @@ public class PlayStationNetworkClient {
 					friendPsnId);
 			parser.parse(response.getStream(), handler, response.getCharset());
 			return handler.getTrophyList();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkLoginException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getClientFriendTrophyList - Exiting");
@@ -850,9 +852,9 @@ public class PlayStationNetworkClient {
 			parser.parse(response.getStream(), gameHandler,
 					response.getCharset());
 			return gameHandler.getGames();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getPublicGameList - Exiting");
@@ -887,7 +889,7 @@ public class PlayStationNetworkClient {
 	 * 
 	 * @param psnId
 	 *            psn id
-	 * @param trophyLinkId
+	 * @param titleLinkId
 	 *            US trophy link id
 	 * @param getGameId
 	 *            whether to retrieve <i>Official</i> game Id
@@ -902,10 +904,10 @@ public class PlayStationNetworkClient {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public List<PsnTrophyData> getPublicTrophyList(final String psnId,
-			final String trophyLinkId, final boolean getGameId)
+			final String titleLinkId, final boolean getGameId)
 			throws PlayStationNetworkException,
 			PlayStationNetworkLoginException, IOException {
-		return getPublicTrophyListInternal(psnId, trophyLinkId, getGameId);
+		return getPublicTrophyListInternal(psnId, titleLinkId, getGameId);
 	}
 
 	/**
@@ -935,7 +937,7 @@ public class PlayStationNetworkClient {
 	 * 
 	 * @param psnId
 	 *            psn id
-	 * @param trophyLinkId
+	 * @param titleLinkId
 	 *            US trophy link id
 	 * @param gameId
 	 *            <i>Official</i> game Id
@@ -948,23 +950,23 @@ public class PlayStationNetworkClient {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public List<PsnTrophyData> getPublicTrophyList(final String psnId,
-			final String trophyLinkId, final String gameId)
+			final String titleLinkId, final String gameId)
 			throws PlayStationNetworkException,
 			PlayStationNetworkLoginException, IOException {
-		return getPublicTrophyListInternal(psnId, trophyLinkId, gameId);
+		return getPublicTrophyListInternal(psnId, titleLinkId, gameId);
 	}
 
 	private List<PsnTrophyData> getPublicTrophyListInternal(final String psnId,
-			final String trophyLinkId, final Object option) throws IOException,
+			final String titleLinkId, final Object option) throws IOException,
 			PlayStationNetworkException, PlayStationNetworkLoginException {
 		Response response = null;
 		String methodGameId = null;
 		HandlerWebUSTrophy trophyHandler = null;
 		log.debug("getPublicTrophyListInternal [{}, {}, {}] - Entering", psnId,
-				trophyLinkId, option);
+				titleLinkId, option);
 
-		if (PsnUtils.isValidGameId(trophyLinkId)) throw new IllegalArgumentException(
-				"invalid trophyLinkId: " + trophyLinkId);
+		if (PsnUtils.isValidGameId(titleLinkId)) throw new IllegalArgumentException(
+				"invalid US title link: " + titleLinkId);
 
 		try {
 
@@ -976,7 +978,7 @@ public class PlayStationNetworkClient {
 								new URL(
 										String.format(
 												"http://us.playstation.com/playstation/psn/profiles/%s/trophies/%s",
-												psnId, trophyLinkId)))
+												psnId, titleLinkId)))
 						.setHeader("Referer",
 								"http://us.playstation.com/playstation/psn/profiles/")
 						.setHeader("Accept", "text/html")
@@ -992,7 +994,7 @@ public class PlayStationNetworkClient {
 
 			final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
 			params.add(new NameValuePair("sortBy", "id_asc"));
-			params.add(new NameValuePair("titleId", trophyLinkId));
+			params.add(new NameValuePair("titleId", titleLinkId));
 
 			response = networkHelper
 					.setupMethod(
@@ -1016,8 +1018,8 @@ public class PlayStationNetworkClient {
 			case 2:
 				throw new PlayStationNetworkException("psnId invaid");
 			case -1:
-				new PlayStationNetworkException("TrophyLinkId or psnId invalid")
-						.printStackTrace();
+				new PlayStationNetworkException(
+						"US title link or psnId invalid").printStackTrace();
 				return null;
 			case -2:
 				throw new PlayStationNetworkLoginException(
@@ -1025,8 +1027,9 @@ public class PlayStationNetworkClient {
 
 			}
 			return trophyHandler.getTrophies();
-		} catch (final SAXException e) {
-			throw new PlayStationNetworkException(e);
+		} catch (final ParseException e) {
+			throw new PlayStationNetworkException(
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getPublicTrophyListInternal - Exiting");
@@ -1110,9 +1113,9 @@ public class PlayStationNetworkClient {
 			parser.parse(response.getStream(), handlerXmlProfile,
 					response.getCharset());
 			return handlerXmlProfile.getProfile();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getProfile - Exiting");
@@ -1260,6 +1263,7 @@ public class PlayStationNetworkClient {
 									"http://searchjid.usa.np.community.playstation.net/basic_view/func/search_jid"))
 					.setPayload(xmlPost.getBytes("UTF-8"))
 					.setHeader("User-Agent", AGENT_PS3_COMMUNITY)
+					.setHeader("Content-Type", "text/xml; charset=UTF-8")
 					.execute(networkHelper);
 			final String data = CommonUtils.getContentFromInputStream(
 					response.getStream(), response.getCharset());
@@ -1353,9 +1357,9 @@ public class PlayStationNetworkClient {
 			if (gameHandler.getResult().equals("05")) throw new PlayStationNetworkException(
 					"jid invalid");
 			return gameHandler.getGames();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getOfficialGameList - Exiting");
@@ -1429,9 +1433,9 @@ public class PlayStationNetworkClient {
 			if (trophyHandler.getResult().equals("05")) throw new PlayStationNetworkException(
 					"jid invalid");
 			return trophyHandler.getTrophies();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getOfficialTrophyList - Exiting");
@@ -1508,9 +1512,9 @@ public class PlayStationNetworkClient {
 			if (trophyHandler.getResult().equals("05")) throw new PlayStationNetworkException(
 					"Id invalid");
 			return trophyHandler.getTrophies();
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getOfficialLatestTrophyList - Exiting");
@@ -1542,7 +1546,7 @@ public class PlayStationNetworkClient {
 	 * http://trophy.ww.np.community.playstation.net/trophy/func/get_latest_trophies
 	 * </pre>
 	 * 
-	 * @see PsnUtils#getOfficialDateFormat(java.util.Date)
+	 * @see PsnUtils#getOfficialDateFormat(java.util.Date, java.util.Locale)
 	 * 
 	 * @param jid
 	 *            jid
@@ -1591,9 +1595,9 @@ public class PlayStationNetworkClient {
 					"jid invalid");
 			return trophyHandler.getTrophies();
 
-		} catch (final SAXException e) {
+		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
-					"Unexpected error occurred while parsing xml", e);
+					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
 			log.debug("getOfficialTrophyListSince - Exiting");

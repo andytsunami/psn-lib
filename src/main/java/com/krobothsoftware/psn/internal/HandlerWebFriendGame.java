@@ -61,11 +61,11 @@ public final class HandlerWebFriendGame extends HandlerHtml {
 
 			final TagNode imageTag = gameRow1.findElementByName("IMG", true);
 
-			String trophyLinkId = imageTag.getParent().getAttributeByName(
-					"href");
-			trophyLinkId = trophyLinkId.substring(
-					trophyLinkId.indexOf("/detail/?title=") + 15,
-					trophyLinkId.indexOf("&friend="));
+			String titleLinkId = imageTag.getParent()
+					.getAttributeByName("href");
+			titleLinkId = titleLinkId.substring(
+					titleLinkId.indexOf("/detail/?title=") + 15,
+					titleLinkId.indexOf("&friend="));
 
 			String gameImage = imageTag.getAttributeByName("src");
 			gameImage = "http://trophy01.np.community.playstation.net/trophy/np/"
@@ -90,8 +90,7 @@ public final class HandlerWebFriendGame extends HandlerHtml {
 					.setGameImage(gameImage).setProgress(progress)
 					.setGameId(npCommid).setPlatinum(platinum).setGold(gold)
 					.setSilver(silver).setBronze(bronze)
-					.setTrophies(platinum + gold + silver + bronze)
-					.setTrophyLinkId(trophyLinkId).build());
+					.setTitleLinkId(titleLinkId).build());
 		}
 	}
 

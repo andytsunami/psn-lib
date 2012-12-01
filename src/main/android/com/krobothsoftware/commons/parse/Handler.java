@@ -15,34 +15,35 @@
  * ========================================================== 
  */
 
-package com.krobothsoftware.psn.model;
+package com.krobothsoftware.commons.parse;
+
+import org.xml.sax.helpers.DefaultHandler;
+
+import com.krobothsoftware.commons.progress.ProgressHelper;
 
 /**
+ * Handler to parse data
  * 
- * Indicates model is a Psn Game with common methods.
+ * @see Parser#parse(java.io.InputStream, Handler, String)
  * 
  * @version 3.0
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
-public interface PsnGame {
+public abstract class Handler extends DefaultHandler {
+	protected ProgressHelper progressHelper;
+	protected Parser parser;
 
-	String getGameId();
+	public Handler(final ProgressHelper progressHelper) {
+		this.progressHelper = progressHelper;
+	}
 
-	int getPlatinum();
+	public Handler() {
 
-	int getGold();
+	}
 
-	int getSilver();
-
-	int getBronze();
-
-	/**
-	 * 
-	 * Gets Trophy Link Id which can be UK or US methods.
-	 * 
-	 * @return Trophy Link Id
-	 */
-	String getTitleLinkId();
+	void setParser(final Parser defaultParser) {
+		parser = defaultParser;
+	}
 
 }

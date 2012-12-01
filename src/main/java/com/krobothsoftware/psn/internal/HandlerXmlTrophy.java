@@ -59,10 +59,10 @@ public final class HandlerXmlTrophy extends HandlerXml {
 	private String dateEarned;
 	private TrophyType trophyType;
 
-	private final String userId;
+	private final String psnId;
 
-	public HandlerXmlTrophy(final String userId) {
-		this.userId = userId;
+	public HandlerXmlTrophy(final String psnId) {
+		this.psnId = psnId;
 	}
 
 	public List<PsnTrophyDataOfficial> getTrophies() {
@@ -117,7 +117,7 @@ public final class HandlerXmlTrophy extends HandlerXml {
 
 		if (qLocal.equalsIgnoreCase(TROPHY)) {
 			if (psnTrophyList == null) psnTrophyList = new ArrayList<PsnTrophyDataOfficial>();
-			psnTrophyList.add(new PsnTrophyDataOfficial.Builder(userId)
+			psnTrophyList.add(new PsnTrophyDataOfficial.Builder(psnId)
 					.setPlatform(pf).setTrophyId(trophyId).setGameId(gameId)
 					.setDateEarned(dateEarned).setTrophyType(trophyType)
 					.build());

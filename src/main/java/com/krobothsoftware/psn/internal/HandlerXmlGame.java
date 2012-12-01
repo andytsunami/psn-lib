@@ -57,10 +57,10 @@ public final class HandlerXmlGame extends HandlerXml {
 	private int numberOfGames;
 
 	private List<PsnGameDataOfficial> psnGameList;
-	private final String userId;
+	private final String jid;
 
-	public HandlerXmlGame(final String userId) {
-		this.userId = userId;
+	public HandlerXmlGame(final String jid) {
+		this.jid = jid;
 	}
 
 	public List<PsnGameDataOfficial> getGames() {
@@ -103,11 +103,10 @@ public final class HandlerXmlGame extends HandlerXml {
 			if (psnGameList == null) psnGameList = new ArrayList<PsnGameDataOfficial>(
 					numberOfGames);
 
-			psnGameList.add(new PsnGameDataOfficial.Builder(userId)
+			psnGameList.add(new PsnGameDataOfficial.Builder(jid)
 					.setPlatform(pf).setLastUpdated(lastUpdated)
 					.setGameId(npCommid).setPlatinum(platinum).setGold(gold)
-					.setSilver(silver).setBronze(bronze)
-					.setTrophies(platinum + gold + silver + bronze).build());
+					.setSilver(silver).setBronze(bronze).build());
 		}
 
 	}

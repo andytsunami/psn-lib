@@ -23,6 +23,7 @@ import java.util.List;
 import org.htmlcleaner.TagNode;
 
 import com.krobothsoftware.commons.parse.HandlerHtml;
+import com.krobothsoftware.psn.PsnUtils;
 import com.krobothsoftware.psn.model.PsnGameData;
 
 /**
@@ -33,11 +34,11 @@ import com.krobothsoftware.psn.model.PsnGameData;
  */
 public final class HandlerWebUKGame extends HandlerHtml {
 	private final List<PsnGameData> psnGameList;
-	private final String userId;
+	private final String psnId;
 
-	public HandlerWebUKGame(final String userId) {
+	public HandlerWebUKGame(final String psnId) {
 		psnGameList = new ArrayList<PsnGameData>();
-		this.userId = userId;
+		this.psnId = psnId;
 	}
 
 	public List<PsnGameData> getGameList() {
@@ -59,18 +60,15 @@ public final class HandlerWebUKGame extends HandlerHtml {
 					false);
 			final TagNode imgData = gameData.get(0).findElementByName("A",
 					false);
-			String trophyLinkId = imgData.getAttributeByName("href");
-			trophyLinkId = trophyLinkId.substring(trophyLinkId
+			String titleLinkId = imgData.getAttributeByName("href");
+			titleLinkId = titleLinkId.substring(titleLinkId
 					.indexOf("/detail/?title=") + 15);
 			String gameImage = imgData.findElementByName("IMG", false)
 					.getAttributeByName("src");
 			gameImage = "http://trophy01.np.community.playstation.net/trophy/np/"
 					+ gameImage
 							.substring(gameImage.indexOf("/trophy/np/") + 11);
-			String npCommid = gameImage.substring(
-					gameImage.indexOf("trophy/np/") + 10,
-					gameImage.indexOf("_00_"));
-			npCommid += "_00";
+			String npCommid = PsnUtils.getGameIdOf(gameImage);
 			final String gameTitle = gameData.get(1)
 					.findElementByName("STRONG", true).getText().toString();
 			final int bronze = Integer.parseInt(gameData.get(2).getText()
@@ -84,13 +82,13 @@ public final class HandlerWebUKGame extends HandlerHtml {
 			final String progressText = gameData.get(8).getText().toString();
 			final int progress = Integer.parseInt(progressText.substring(0,
 					progressText.length() - 1));
-			psnGameList.add(new PsnGameData.Builder(ModelType.UK_VERSION,
-					userId).setName(gameTitle).setGameImage(gameImage)
-					.setProgress(progress).setGameId(npCommid)
-					.setPlatinum(platinum).setGold(gold).setSilver(silver)
-					.setBronze(bronze)
-					.setTrophies(platinum + gold + silver + bronze)
-					.setTrophyLinkId(trophyLinkId).build());
+			psnGameList
+					.add(new PsnGameData.Builder(ModelType.UK_VERSION, psnId)
+							.setName(gameTitle).setGameImage(gameImage)
+							.setProgress(progress).setGameId(npCommid)
+							.setPlatinum(platinum).setGold(gold)
+							.setSilver(silver).setBronze(bronze)
+							.setTitleLinkId(titleLinkId).build());
 		}
 
 	}

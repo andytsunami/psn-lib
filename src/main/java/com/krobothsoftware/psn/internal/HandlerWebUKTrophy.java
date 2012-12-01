@@ -29,6 +29,7 @@ import java.util.List;
 import org.htmlcleaner.TagNode;
 
 import com.krobothsoftware.commons.parse.HandlerHtml;
+import com.krobothsoftware.psn.PsnUtils;
 import com.krobothsoftware.psn.TrophyType;
 import com.krobothsoftware.psn.model.PsnTrophyData;
 
@@ -40,10 +41,10 @@ import com.krobothsoftware.psn.model.PsnTrophyData;
  */
 public final class HandlerWebUKTrophy extends HandlerHtml {
 	private List<PsnTrophyData> psnTrophyList;
-	private final String userId;
+	private final String psnId;
 
-	public HandlerWebUKTrophy(final String userId) {
-		this.userId = userId;
+	public HandlerWebUKTrophy(final String psnId) {
+		this.psnId = psnId;
 	}
 
 	public List<PsnTrophyData> getTrophyList() {
@@ -53,12 +54,9 @@ public final class HandlerWebUKTrophy extends HandlerHtml {
 	@Override
 	protected void parse(final TagNode rootTagNode) {
 		// get GameId
-		String gameId = rootTagNode
+		String gameId = PsnUtils.getGameIdOf(rootTagNode
 				.findElementByAttValue("class", "gameLogoImage", true, false)
-				.findElementByName("IMG", false).getAttributeByName("src");
-		gameId = gameId.substring(gameId.indexOf("trophy/np/") + 10,
-				gameId.indexOf("_00_"));
-		gameId += "_00";
+				.findElementByName("IMG", false).getAttributeByName("src"));
 
 		// get trophy details
 		// @formatter:off
@@ -142,7 +140,7 @@ public final class HandlerWebUKTrophy extends HandlerHtml {
 			if (psnTrophyList == null) psnTrophyList = new ArrayList<PsnTrophyData>();
 
 			psnTrophyList.add(new PsnTrophyData.Builder(ModelType.UK_VERSION,
-					userId).setName(trophyTitle).setImageUrl(trophyImage)
+					psnId).setName(trophyTitle).setImageUrl(trophyImage)
 					.setDescription(trophyDesc).setHidden(trophyHidden)
 					.setTrophyId(trophyId).setGameId(gameId)
 					.setDateEarned(trophyDate).setTrophyType(trophyType)

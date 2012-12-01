@@ -28,12 +28,11 @@ import com.krobothsoftware.psn.model.PsnGame;
 public abstract class BuilderGame<T extends PsnGame> {
 	public String userId;
 	public String gameId;
-	public int trophies;
 	public int platinum;
 	public int gold;
 	public int silver;
 	public int bronze;
-	public String trophyLinkId;
+	public String titleLinkId;
 
 	public BuilderGame(final String userId) {
 		this.userId = userId;
@@ -41,11 +40,6 @@ public abstract class BuilderGame<T extends PsnGame> {
 
 	public BuilderGame<T> setGameId(final String gameId) {
 		this.gameId = gameId;
-		return this;
-	}
-
-	public BuilderGame<T> setTrophies(final int trophies) {
-		this.trophies = trophies;
 		return this;
 	}
 
@@ -69,8 +63,8 @@ public abstract class BuilderGame<T extends PsnGame> {
 		return this;
 	}
 
-	public BuilderGame<T> setTrophyLinkId(final String trophyLinkId) {
-		this.trophyLinkId = trophyLinkId;
+	public BuilderGame<T> setTitleLinkId(final String titleLinkId) {
+		this.titleLinkId = titleLinkId;
 		return this;
 	}
 

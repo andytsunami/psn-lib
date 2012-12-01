@@ -34,19 +34,14 @@ import com.krobothsoftware.psn.model.PsnFriendData;
  * @author Kyle Kroboth
  */
 public final class HandlerXmlFriend extends HandlerXml {
-	@SuppressWarnings("unused")
-	private static final String FRIEND_LIST = "friend-list";
 	private static final String PSN_FRIEND = "psn_friend";
 	private static final String ONLINEID = "onlineid";
-	private static final String QUICK_FRIEND = "quick_friend";
 	private static final String CURRENT_PRESENCE = "current_presence";
 	private static final String CURRENT_GAME = "current_game";
 	private static final String CURRENT_AVATAR = "current_avatar";
 	private static final String COMMENT = "comment";
 	private static final String PLAYSTATION_PLUS = "playstationplus";
 
-	@SuppressWarnings("unused")
-	private static final String TROPHY = "trophy";
 	private static final String LEVEL = "level";
 	private static final String PLATINUM = "platinum";
 	private static final String GOLD = "gold";
@@ -57,7 +52,6 @@ public final class HandlerXmlFriend extends HandlerXml {
 
 	// friend
 	private String onlineId;
-	private boolean isQuickFriend;
 	private FriendStatus presence;
 	private String game;
 	private String avatar;
@@ -96,7 +90,7 @@ public final class HandlerXmlFriend extends HandlerXml {
 
 		if (qLocal.equalsIgnoreCase(PSN_FRIEND)) {
 			list.add(new PsnFriendData.Builder(onlineId)
-					.setQuickFriend(isQuickFriend).setCurrentPresence(presence)
+					.setCurrentPresence(presence)
 					.setCurrentGame(game.equals("null") ? null : game)
 					.setCurrentAvatar(avatar)
 					.setComment(comment.equals("null") ? null : comment)
@@ -113,8 +107,6 @@ public final class HandlerXmlFriend extends HandlerXml {
 		final String qLocal = new String(ch, start, length);
 
 		if (calledStartElement) if (startTag.equalsIgnoreCase(ONLINEID)) onlineId = qLocal;
-		else if (startTag.equalsIgnoreCase(QUICK_FRIEND)) isQuickFriend = Boolean
-				.parseBoolean(qLocal);
 		else if (startTag.equalsIgnoreCase(CURRENT_PRESENCE)) presence = getOnlineStatus(qLocal);
 		else if (startTag.equalsIgnoreCase(CURRENT_GAME)) game = qLocal;
 		else if (startTag.equalsIgnoreCase(CURRENT_AVATAR)) avatar = qLocal;

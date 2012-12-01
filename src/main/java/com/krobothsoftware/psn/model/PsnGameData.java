@@ -38,12 +38,11 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 	private final String name;
 	private final String gameImage;
 	private final int progress;
-	private final int trophies;
 	private final int platinum;
 	private final int gold;
 	private final int silver;
 	private final int bronze;
-	private final String trophyLinkId;
+	private final String titleLinkId;
 
 	private PsnGameData(final Builder builder) {
 		super(builder.version);
@@ -52,12 +51,11 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 		name = builder.name;
 		gameImage = builder.gameImage;
 		progress = builder.progress;
-		trophies = builder.trophies;
 		platinum = builder.platinum;
 		gold = builder.gold;
 		silver = builder.silver;
 		bronze = builder.bronze;
-		trophyLinkId = builder.trophyLinkId;
+		titleLinkId = builder.titleLinkId;
 
 	}
 
@@ -84,11 +82,6 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 	}
 
 	@Override
-	public int getTrophyCount() {
-		return trophies;
-	}
-
-	@Override
 	public int getPlatinum() {
 		return platinum;
 	}
@@ -109,8 +102,8 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 	}
 
 	@Override
-	public String getTrophyLinkId() {
-		return trophyLinkId;
+	public String getTitleLinkId() {
+		return titleLinkId;
 	}
 
 	@Override

@@ -33,7 +33,6 @@ import com.krobothsoftware.psn.internal.ModelType;
 public class PsnFriendData extends PsnModel implements PsnId {
 	private static final long serialVersionUID = -2725063559049803762L;
 	private final String psnId;
-	private final boolean isQuickFriend;
 	private final FriendStatus currentPresence;
 	private final String currentGame;
 	private final String avatar;
@@ -48,7 +47,6 @@ public class PsnFriendData extends PsnModel implements PsnId {
 	private PsnFriendData(final Builder builder) {
 		super(ModelType.UK_FRIEND_VERSION);
 		psnId = builder.psnId;
-		isQuickFriend = builder.isQuickFriend;
 		currentPresence = builder.currentPresence;
 		currentGame = builder.currentGame;
 		avatar = builder.avatar;
@@ -66,15 +64,6 @@ public class PsnFriendData extends PsnModel implements PsnId {
 		return psnId;
 	}
 
-	/**
-	 * UK site has an option for selecting quick friends
-	 * 
-	 * @return true, if is quick friend
-	 */
-	public boolean isQuickFriend() {
-		return isQuickFriend;
-	}
-
 	public FriendStatus getCurrentStatus() {
 		return currentPresence;
 	}
@@ -87,13 +76,13 @@ public class PsnFriendData extends PsnModel implements PsnId {
 	 * Gets UK avatar link
 	 * 
 	 * <pre>
-	 * http://secure.eu.playstation.com/ (Avatar)
+	 * http://secure.eu.playstation.com (Avatar)
 	 * </pre>
 	 * 
 	 * @return avatar link
 	 */
 	public String getAvatar() {
-		return "http://secure.eu.playstation.com/" + avatar;
+		return "http://secure.eu.playstation.com" + avatar;
 	}
 
 	public String getComment() {
@@ -135,7 +124,6 @@ public class PsnFriendData extends PsnModel implements PsnId {
 
 	public static class Builder {
 		String psnId;
-		boolean isQuickFriend;
 		FriendStatus currentPresence;
 		String currentGame;
 		String avatar;
@@ -153,11 +141,6 @@ public class PsnFriendData extends PsnModel implements PsnId {
 
 		public Builder setPsnId(final String psnId) {
 			this.psnId = psnId;
-			return this;
-		}
-
-		public Builder setQuickFriend(final boolean isQuickFriend) {
-			this.isQuickFriend = isQuickFriend;
 			return this;
 		}
 

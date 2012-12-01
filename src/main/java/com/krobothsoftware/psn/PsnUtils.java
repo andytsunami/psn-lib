@@ -20,6 +20,7 @@ package com.krobothsoftware.psn;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import com.krobothsoftware.commons.network.values.Cookie;
 import com.krobothsoftware.commons.network.values.Cookie.Builder;
@@ -170,8 +171,7 @@ public final class PsnUtils {
 	 * @return official game Id
 	 */
 	public static String getGameIdOf(final String trophyImageLink) {
-		final int index = trophyImageLink
-				.indexOf(".playstation.net/trophy/np/") + 27;
+		final int index = trophyImageLink.indexOf("/trophy/np/") + 11;
 		return trophyImageLink.substring(index, index + 12);
 	}
 
@@ -181,7 +181,8 @@ public final class PsnUtils {
 	 * @param date
 	 * @return official date format
 	 */
-	public static String getOfficialDateFormat(final Date date) {
-		return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(date);
+	public static String getOfficialDateFormat(final Date date, Locale locale) {
+		return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", locale)
+				.format(date);
 	}
 }

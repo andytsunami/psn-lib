@@ -29,6 +29,7 @@ import java.util.List;
 import org.htmlcleaner.TagNode;
 
 import com.krobothsoftware.commons.parse.HandlerHtml;
+import com.krobothsoftware.psn.PsnUtils;
 import com.krobothsoftware.psn.TrophyType;
 import com.krobothsoftware.psn.model.PsnTrophyData;
 
@@ -53,12 +54,9 @@ public final class HandlerWebFriendTrophy extends HandlerHtml {
 	@Override
 	protected void parse(final TagNode rootTagNode) {
 		// get game Id
-		String gameId = rootTagNode
+		String gameId = PsnUtils.getGameIdOf(rootTagNode
 				.findElementByAttValue("class", "gameLogoImage", true, false)
-				.findElementByName("IMG", false).getAttributeByName("src");
-		gameId = gameId.substring(gameId.indexOf("trophy/np/") + 10,
-				gameId.indexOf("_00_"));
-		gameId += "_00";
+				.findElementByName("IMG", false).getAttributeByName("src"));
 
 		// get trophy details
 		// @formatter:off

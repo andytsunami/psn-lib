@@ -28,7 +28,7 @@ import com.krobothsoftware.psn.internal.ModelType;
  * Account Settings but gets it from a <code>userinfo</code> cookie on the US
  * Site.
  * 
- * @see PlayStationNetworkClient#getUserInfo()
+ * @see PlayStationNetworkClient#getClientUserInfo()
  * 
  * @version 3.0
  * @since Nov 25 2012
@@ -143,8 +143,8 @@ public class PsnUserInfo extends PsnModel implements PsnId {
 	/**
 	 * Returns a new PsnPersonalInfo Instance.
 	 * 
-	 * @param data
-	 *            the data
+	 * @param userinfo
+	 *            the cookie data
 	 * @return the personal info
 	 */
 	public static PsnUserInfo newInstance(final String userinfo) {

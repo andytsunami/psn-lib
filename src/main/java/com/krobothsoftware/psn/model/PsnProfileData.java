@@ -55,7 +55,7 @@ public class PsnProfileData extends PsnModel implements Jid {
 	private final int silver;
 	private final int bronze;
 
-	public final static Map<String, Locale> CULTURE_MAP;
+	public transient final static Map<String, Locale> CULTURE_MAP;
 
 	static {
 		CULTURE_MAP = new HashMap<String, Locale>();

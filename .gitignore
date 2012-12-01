@@ -166,6 +166,7 @@ package-info.java
 .checkstyle
 /src/main/java/Test.java
 /src/main/java/UnitTest.java
+/src/main/java/MainTest.java
 
 /doc
 

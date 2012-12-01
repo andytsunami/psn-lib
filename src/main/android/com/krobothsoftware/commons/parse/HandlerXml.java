@@ -19,6 +19,8 @@ package com.krobothsoftware.commons.parse;
 
 import javax.xml.parsers.SAXParser;
 
+import android.os.Build;
+
 import com.krobothsoftware.commons.progress.ProgressHelper;
 
 /**
@@ -32,6 +34,7 @@ public abstract class HandlerXml extends Handler {
 	protected SAXParser xmlParser;
 	protected String startTag;
 	protected boolean calledStartElement;
+	private static int SDK_VERSION = -1;
 
 	void setParser(final SAXParser xmlParser) {
 		this.xmlParser = xmlParser;
@@ -55,7 +58,22 @@ public abstract class HandlerXml extends Handler {
 	 * @return correct qLocal
 	 */
 	protected final String qLocal(final String qName, final String localname) {
-		return qName;
+		String retValue = "";
+
+		if (SDK_VERSION != -1) {
+
+			if (SDK_VERSION <= 7) retValue = localname;
+			else
+				retValue = qName;
+		} else
+			retValue = qName;
+		return retValue;
+	}
+
+	static {
+		// Android version's below 2.1 switches qName and qLocal values,
+		// so this is to check if android exist and what version it is
+		SDK_VERSION = Build.VERSION.SDK_INT;
 	}
 
 }

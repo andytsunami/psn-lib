@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.StringTokenizer;
 
+import com.krobothsoftware.commons.network.values.Cookie;
 import com.krobothsoftware.commons.util.CommonUtils;
 
 /**
@@ -259,7 +260,6 @@ public class Cookie implements Serializable {
 					"'domain' can not be null");
 			return new Cookie(this);
 		}
-
 	}
 
 }

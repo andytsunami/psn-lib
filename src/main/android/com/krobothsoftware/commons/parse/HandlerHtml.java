@@ -15,34 +15,35 @@
  * ========================================================== 
  */
 
-package com.krobothsoftware.psn.model;
+package com.krobothsoftware.commons.parse;
+
+import org.htmlcleaner.HtmlCleaner;
+import org.htmlcleaner.TagNode;
+
+import com.krobothsoftware.commons.progress.ProgressHelper;
 
 /**
- * 
- * Indicates model is a Psn Game with common methods.
+ * Base Handler for HTML data
  * 
  * @version 3.0
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
-public interface PsnGame {
+public abstract class HandlerHtml extends Handler {
+	protected HtmlCleaner cleaner;
 
-	String getGameId();
+	public HandlerHtml(final ProgressHelper progressHelper) {
+		super(progressHelper);
+	}
 
-	int getPlatinum();
+	public HandlerHtml() {
 
-	int getGold();
+	}
 
-	int getSilver();
+	protected abstract void parse(TagNode rootTagNode);
 
-	int getBronze();
-
-	/**
-	 * 
-	 * Gets Trophy Link Id which can be UK or US methods.
-	 * 
-	 * @return Trophy Link Id
-	 */
-	String getTitleLinkId();
+	void setHtmlCleaner(final HtmlCleaner cleaner) {
+		this.cleaner = cleaner;
+	}
 
 }

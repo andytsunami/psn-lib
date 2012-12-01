@@ -15,34 +15,34 @@
  * ========================================================== 
  */
 
-package com.krobothsoftware.psn.model;
+package com.krobothsoftware.commons.progress;
 
 /**
+ * The listener interface for receiving progress events. When a progress event
+ * occurs, that object's appropriate method is invoked.
  * 
- * Indicates model is a Psn Game with common methods.
- * 
+ * @see ProgressHelper
  * @version 3.0
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
-public interface PsnGame {
-
-	String getGameId();
-
-	int getPlatinum();
-
-	int getGold();
-
-	int getSilver();
-
-	int getBronze();
+public interface ProgressListener {
 
 	/**
+	 * Called when progress is updated
 	 * 
-	 * Gets Trophy Link Id which can be UK or US methods.
-	 * 
-	 * @return Trophy Link Id
+	 * @param value
+	 *            value
+	 * @param text
+	 *            update text
 	 */
-	String getTitleLinkId();
+	void onProgressUpdate(float value, String text);
+
+	/**
+	 * Gets progress Length
+	 * 
+	 * @return progress length
+	 */
+	int getProgressLength();
 
 }

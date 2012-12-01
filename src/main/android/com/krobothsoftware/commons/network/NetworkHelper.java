@@ -34,6 +34,8 @@ import java.util.zip.InflaterInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import android.os.Build;
+
 import com.krobothsoftware.commons.network.authorization.AuthorizationManager;
 import com.krobothsoftware.commons.network.values.NameValuePair;
 
@@ -348,15 +350,19 @@ public class NetworkHelper {
 	 * HTTP Methods used for connections
 	 */
 	public enum Method {
-
 		GET, POST, HEAD, PUT;
 	}
 
 	static {
-		AGENT_DEFAULT = String.format("NetworkHelper/%s (%s %s; Java %s)",
-				VERSION, System.getProperty("os.name"),
-				System.getProperty("os.version"),
-				System.getProperty("java.version"));
+		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.FROYO) {
+			System.setProperty("http.keepAlive", "false");
+		}
+
+		AGENT_DEFAULT = String.format(
+				"NetworkHelper/%s (%s %s; %s %s; Android %s)", VERSION,
+				System.getProperty("os.name"),
+				System.getProperty("os.version"), Build.MANUFACTURER,
+				Build.MODEL, Build.VERSION.RELEASE);
 		CONNDUMMY = new ConnectionListener() {
 
 			@Override
