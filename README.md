@@ -162,3 +162,5 @@ Go to [Downloads](https://github.com/KrobothSoftware/psn-lib/downloads) and get 
 * [SLF4J](http://www.slf4j.org/) - Logging library
 
 There are two `krobothcommons-vXXX.jar`, one is for Android and other is SE. Make sure only to use one!
+
+[Changelog](https://github.com/KrobothSoftware/psn-lib/wiki/Changelog)
