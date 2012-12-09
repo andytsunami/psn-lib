@@ -104,7 +104,7 @@ public final class TrophyCalculator {
 		if (points < LVL_6) return (dpoints - LVL_5) / (LVL_6 - LVL_5)
 				* PROGRESS;
 		if (points < LVL_12) return (dpoints - LVL_6) / INCR_12 % 1D * PROGRESS;
-		if (points < LVL_13) return (dpoints - LVL_13) / INCR_27 % 1D
+		if (points < LVL_27) return (dpoints - LVL_13) / INCR_27 % 1D
 				* PROGRESS;
 		return (dpoints - LVL_27) / INCR_43 % 1D * PROGRESS;
 
