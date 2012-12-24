@@ -25,11 +25,11 @@ import java.net.HttpURLConnection;
  * to call {@link #disconnect()} to ensure connection is closed.
  * 
  * 
- * @version 3.0.1
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
-public final class Response {
+public class Response {
 	private final HttpURLConnection urlConnection;
 	private final UnclosableInputStream responseStream;
 	private final int responseCode;

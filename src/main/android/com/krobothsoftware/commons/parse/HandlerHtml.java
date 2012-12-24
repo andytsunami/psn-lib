@@ -17,20 +17,16 @@
 
 package com.krobothsoftware.commons.parse;
 
-import org.htmlcleaner.HtmlCleaner;
-import org.htmlcleaner.TagNode;
-
 import com.krobothsoftware.commons.progress.ProgressHelper;
 
 /**
  * Base Handler for HTML data
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public abstract class HandlerHtml extends Handler {
-	protected HtmlCleaner cleaner;
 
 	public HandlerHtml(final ProgressHelper progressHelper) {
 		super(progressHelper);
@@ -38,12 +34,6 @@ public abstract class HandlerHtml extends Handler {
 
 	public HandlerHtml() {
 
-	}
-
-	protected abstract void parse(TagNode rootTagNode);
-
-	void setHtmlCleaner(final HtmlCleaner cleaner) {
-		this.cleaner = cleaner;
 	}
 
 }

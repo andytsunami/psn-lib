@@ -18,6 +18,7 @@
 package com.krobothsoftware.commons.network;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -31,20 +32,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.krobothsoftware.commons.network.NetworkHelper.Method;
-import com.krobothsoftware.commons.network.authorization.Authorization;
 import com.krobothsoftware.commons.network.values.Cookie;
 import com.krobothsoftware.commons.network.values.NameValuePair;
 
 /**
- * Builder for requesting HTTP connections. Use
- * {@link NetworkHelper#setupMethod(Method, URL)} to initiate the builder.
+ * Builder for requesting HTTP connections.
  * 
  * 
- * @version 3.0.1
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
-public final class RequestBuilder {
+public class RequestBuilder {
 	final URL url;
 	final Method method;
 	Proxy proxy;
@@ -54,19 +53,9 @@ public final class RequestBuilder {
 	int readTimeout = -1;
 	boolean useCookies = true;
 	final List<Cookie> cookies;
-	boolean useAuth = true;
-	Authorization auth;
 	byte[] payload;
 	final Map<String, String> headerMap;
 
-	/**
-	 * Instantiates new builder
-	 * 
-	 * @param method
-	 *            HTTP method
-	 * @param url
-	 *            web url
-	 */
 	public RequestBuilder(final Method method, final URL url) {
 		this.method = method;
 		this.url = url;
@@ -105,7 +94,7 @@ public final class RequestBuilder {
 		return this;
 	}
 
-	public RequestBuilder setFollowRedirects(final boolean followRedirects) {
+	public RequestBuilder followRedirects(final boolean followRedirects) {
 		this.followRedirects = followRedirects;
 		return this;
 	}
@@ -132,16 +121,6 @@ public final class RequestBuilder {
 
 	public RequestBuilder putCookieList(final List<Cookie> cookies) {
 		this.cookies.addAll(cookies);
-		return this;
-	}
-
-	public RequestBuilder useAuthorizationIfNeeded(final boolean useAuth) {
-		this.useAuth = useAuth;
-		return this;
-	}
-
-	public RequestBuilder setAuthorization(final Authorization auth) {
-		this.auth = auth;
 		return this;
 	}
 
@@ -211,9 +190,6 @@ public final class RequestBuilder {
 		if (useCookies) networkHelper.cookieManager.setupCookies(urlConnection);
 
 		urlConnection.setInstanceFollowRedirects(followRedirects);
-		if (auth != null) networkHelper.authManager.authorizeConnection(this,
-				auth);
-		if (useAuth) networkHelper.authManager.authorizeConnection(this);
 
 		Map<String, String> headers = new HashMap<String, String>(
 				networkHelper.defaultHeaderMap);
@@ -225,7 +201,7 @@ public final class RequestBuilder {
 		case PUT:
 			if (urlConnection.getRequestProperty("Content-Type") == null) {
 				urlConnection.setRequestProperty("Content-Type",
-						"application/x-www-form-urlencoded; charset=UTF-8");
+						"application/x-www-form-urlencoded");
 			}
 			if (payload == null) break;
 			urlConnection.setDoOutput(true);
@@ -238,14 +214,13 @@ public final class RequestBuilder {
 			break;
 		}
 
-		UnclosableInputStream inputStream = null;
+		InputStream inputStream = null;
 		try {
 			final URL url = urlConnection.getURL();
 			networkHelper.log.info("Request {}:{}://{}{}", method,
 					url.getProtocol(), url.getAuthority(), url.getPath());
 			urlConnection.connect();
-			inputStream = new UnclosableInputStream(
-					NetworkHelper.getInputStream(urlConnection));
+			inputStream = NetworkHelper.getInputStream(urlConnection);
 			networkHelper.log.info("Response {}",
 					urlConnection.getResponseMessage());
 		} catch (final IOException e) {
@@ -253,8 +228,7 @@ public final class RequestBuilder {
 			if (!ignoreErrorChecks && statusCode >= 400) {
 				networkHelper.log.info("Response {}",
 						urlConnection.getResponseMessage());
-				inputStream = new UnclosableInputStream(
-						NetworkHelper.getErrorStream(urlConnection));
+				inputStream = NetworkHelper.getErrorStream(urlConnection);
 			} else
 				throw e;
 		} finally {
@@ -263,9 +237,7 @@ public final class RequestBuilder {
 			networkHelper.connListener.onFinish(url, urlConnection);
 		}
 
-		return new Response(urlConnection, inputStream,
-				urlConnection.getResponseCode(),
-				NetworkHelper.getCharset(urlConnection));
+		return getResponse(urlConnection, inputStream);
 
 	}
 
@@ -282,6 +254,24 @@ public final class RequestBuilder {
 		while (iterator.hasNext()) {
 			entry = iterator.next();
 			urlConnection.setRequestProperty(entry.getKey(), entry.getValue());
+		}
+	}
+
+	private Response getResponse(HttpURLConnection urlConnection,
+			InputStream inputStream) throws IOException {
+		int code = urlConnection.getResponseCode();
+		@SuppressWarnings("resource")
+		UnclosableInputStream stream = (inputStream != null) ? new UnclosableInputStream(
+				inputStream) : null;
+		String charset = NetworkHelper.getCharset(urlConnection);
+		switch (code) {
+		case HttpURLConnection.HTTP_MOVED_TEMP:
+			return new ResponseRedirect(urlConnection, stream, code, charset);
+		case HttpURLConnection.HTTP_UNAUTHORIZED:
+			return new ResponseAuthenticate(urlConnection, stream, code,
+					charset);
+		default:
+			return new Response(urlConnection, stream, code, charset);
 		}
 	}
 }

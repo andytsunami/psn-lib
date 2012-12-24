@@ -20,7 +20,6 @@ package com.krobothsoftware.commons.network;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
@@ -45,13 +44,13 @@ import com.krobothsoftware.commons.network.values.NameValuePair;
  * 
  * 
  * @see HttpURLConnection
- * @version 3.0.1
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public class NetworkHelper {
 	public static final String AGENT_DEFAULT;
-	private static final String VERSION = "3.0.1";
+	private static final String VERSION = "3.0.2";
 	private static final ConnectionListener CONNDUMMY;
 	protected final CookieManager cookieManager;
 	protected final AuthorizationManager authManager;
@@ -206,42 +205,15 @@ public class NetworkHelper {
 		return urlConnection;
 	}
 
-	/**
-	 * Sets up request builder from <code>method</code> and <code>url</code>.
-	 * 
-	 * @param method
-	 *            HTTP method
-	 * @param url
-	 *            web url
-	 * @return {@link RequestBuilder}
-	 */
-	public final RequestBuilder setupMethod(final Method method, final URL url) {
-		return new RequestBuilder(method, url);
-	}
-
-	/**
-	 * Sets up request builder form <code>method</code>, <code>url</code> and
-	 * appends <code>query</code> list.
-	 * 
-	 * @param method
-	 *            HTTP method
-	 * @param url
-	 *            web url
-	 * @param query
-	 *            url query
-	 * @return request builder
-	 * @throws MalformedURLException
-	 *             the malformed url exception
-	 */
-	public final RequestBuilder setupMethod(final Method method, final URL url,
-			final List<NameValuePair> query) throws MalformedURLException {
+	public static String setUrlQuery(String url, List<NameValuePair> query) {
 		final StringBuilder builder = new StringBuilder();
 		builder.append('?');
 		for (final NameValuePair pair : query) {
-			builder.append('&');
 			builder.append(pair.getEncodedPair());
+			builder.append('&');
 		}
-		return new RequestBuilder(method, new URL(url, builder.substring(1)));
+
+		return builder.substring(0, builder.length() - 1);
 	}
 
 	/**
@@ -311,14 +283,14 @@ public class NetworkHelper {
 			final HttpURLConnection urlConnection) throws IOException {
 		if (urlConnection.getRequestMethod().equals("HEAD")) return null;
 		final String encoding = urlConnection.getContentEncoding();
-		if (encoding != null && encoding.equalsIgnoreCase("gzip")) {
-			return new GZIPInputStream(urlConnection.getInputStream());
-		} else if (encoding != null && encoding.equalsIgnoreCase("deflate")) {
-			return new InflaterInputStream(urlConnection.getInputStream(),
-					new Inflater(true));
-		} else {
-			return urlConnection.getInputStream();
-		}
+		if (encoding == null) return urlConnection.getInputStream();
+		else if (encoding.equalsIgnoreCase("gzip")) return new GZIPInputStream(
+				urlConnection.getInputStream());
+		else if (encoding.equalsIgnoreCase("deflate")) return new InflaterInputStream(
+				urlConnection.getInputStream(), new Inflater(true));
+
+		return null;
+
 	}
 
 	/**
@@ -336,20 +308,20 @@ public class NetworkHelper {
 			final HttpURLConnection urlConnection) throws IOException {
 		if (urlConnection.getRequestMethod().equals("HEAD")) return null;
 		final String encoding = urlConnection.getContentEncoding();
-		if (encoding != null && encoding.equalsIgnoreCase("gzip")) {
-			return new GZIPInputStream(urlConnection.getErrorStream());
-		} else if (encoding != null && encoding.equalsIgnoreCase("deflate")) {
-			return new InflaterInputStream(urlConnection.getErrorStream(),
-					new Inflater(true));
-		} else {
-			return urlConnection.getErrorStream();
-		}
+		if (encoding == null) return urlConnection.getErrorStream();
+		else if (encoding.equalsIgnoreCase("gzip")) return new GZIPInputStream(
+				urlConnection.getErrorStream());
+		else if (encoding.equalsIgnoreCase("deflate")) return new InflaterInputStream(
+				urlConnection.getErrorStream(), new Inflater(true));
+
+		return null;
 	}
 
 	/**
 	 * HTTP Methods used for connections
 	 */
 	public enum Method {
+
 		GET, POST, HEAD, PUT;
 	}
 
