@@ -17,44 +17,37 @@
 
 package com.krobothsoftware.commons.parse;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.htmlcleaner.HtmlCleaner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Parser is used to parse XML and HTML data
+ * Parser is used to parse XML and HTML data. Xml is parsed by SAX and Html by
+ * TagSoup(SAX).
  * 
- * @version 3.0.1
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public class Parser {
 	final SAXParser xmlParser;
-	final HtmlCleaner htmlCleaner;
+	final SAXParser htmlParser;
 	final Logger log;
 
 	public Parser() throws ParserConfigurationException, SAXException {
 		log = LoggerFactory.getLogger(Parser.class);
-		final SAXParserFactory factory = SAXParserFactory.newInstance();
-		xmlParser = factory.newSAXParser();
-		htmlCleaner = new HtmlCleaner();
-	}
-
-	public Logger getLogger() {
-		return log;
+		xmlParser = SAXParserFactory.newInstance().newSAXParser();
+		htmlParser = SAXParserFactory.newInstance(
+				"org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl",
+				Parser.class.getClassLoader()).newSAXParser();
 	}
 
 	/**
@@ -70,77 +63,24 @@ public class Parser {
 			final String charset) throws ParseException {
 		log.debug("Parsing {}", handler.getClass().getSimpleName());
 		handler.setParser(this);
+		final InputSource inputSource = new InputSource(inputStream);
+		inputSource.setEncoding(charset);
 		try {
 			if (handler instanceof HandlerXml) {
-				final InputSource inputSource = new InputSource(inputStream);
-				inputSource.setEncoding(charset);
-				xmlParser.parse(inputStream, handler);
+				xmlParser
+						.parse(inputStream,
+								(handler instanceof ExpressionFilter) ? new ExpressionHandler(
+										handler) : handler);
 			} else if (handler instanceof HandlerHtml) {
-				((HandlerHtml) handler).setHtmlCleaner(htmlCleaner);
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(inputStream, charset));
-				((HandlerHtml) handler).parse(htmlCleaner.clean(reader));
-			}
+				htmlParser
+						.parse(inputSource,
+								(handler instanceof ExpressionFilter) ? new ExpressionHandler(
+										handler) : handler);
+			} else
+				throw new ParseException(String.format(
+						"Unsupported Handler [%s]", handler.getClass()));
 		} catch (SAXException e) {
-			throw new ParseException(e.getMessage(), e);
-		} catch (IOException e) {
-			throw new ParseException(e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * Parses String content for {@link Handler}
-	 * 
-	 * @param content
-	 *            String content to be parsed
-	 * @param handler
-	 * @param charset
-	 * @throws ParseException
-	 */
-	public void parse(final String content, final Handler handler,
-			final String charset) throws ParseException {
-		log.debug("Parsing {}", handler.getClass().getSimpleName());
-		handler.setParser(this);
-		try {
-			if (handler instanceof HandlerXml) {
-				final StringReader stringReader = new StringReader(content);
-				final InputSource inputSource = new InputSource(stringReader);
-				inputSource.setEncoding(charset);
-				xmlParser.parse(inputSource, handler);
-				stringReader.close();
-			} else if (handler instanceof HandlerHtml) {
-				((HandlerHtml) handler).setHtmlCleaner(htmlCleaner);
-				BufferedReader reader = new BufferedReader(new StringReader(
-						content));
-				((HandlerHtml) handler).parse(htmlCleaner.clean(reader));
-			}
-		} catch (SAXException e) {
-			throw new ParseException(e.getMessage(), e);
-		} catch (IOException e) {
-			throw new ParseException(e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * Parses file for {@link Handler}
-	 * 
-	 * @param file
-	 *            file to be parsed
-	 * @param handler
-	 * @throws ParseException
-	 */
-	public void parse(final File file, final Handler handler)
-			throws ParseException {
-		log.debug("Parsing {}", handler.getClass().getSimpleName());
-		handler.setParser(this);
-		try {
-			if (handler instanceof HandlerXml) {
-				xmlParser.parse(file, handler);
-			} else if (handler instanceof HandlerHtml) {
-				((HandlerHtml) handler).setHtmlCleaner(htmlCleaner);
-				((HandlerHtml) handler).parse(htmlCleaner.clean(file));
-			}
-		} catch (SAXException e) {
+			if (e instanceof StopSAXException) return;
 			throw new ParseException(e.getMessage(), e);
 		} catch (IOException e) {
 			throw new ParseException(e.getMessage(), e);

@@ -21,7 +21,7 @@ import com.krobothsoftware.psn.model.PsnGame;
 
 /**
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */

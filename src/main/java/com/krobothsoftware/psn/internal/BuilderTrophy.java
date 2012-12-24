@@ -22,24 +22,23 @@ import com.krobothsoftware.psn.model.PsnTrophy;
 
 /**
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public abstract class BuilderTrophy<T extends PsnTrophy> {
 	public String userId;
-	public int trophyId;
+	public int index;
 	public String gameId;
 	public String dateEarned;
-	public TrophyType trophyType;
-	public boolean isReceived;
+	public TrophyType type;
 
 	public BuilderTrophy(final String userId) {
 		this.userId = userId;
 	}
 
-	public BuilderTrophy<T> setTrophyId(final int trophieId) {
-		this.trophyId = trophieId;
+	public BuilderTrophy<T> setIndex(final int index) {
+		this.index = index;
 		return this;
 	}
 
@@ -54,12 +53,7 @@ public abstract class BuilderTrophy<T extends PsnTrophy> {
 	}
 
 	public BuilderTrophy<T> setTrophyType(final TrophyType trophieType) {
-		this.trophyType = trophieType;
-		return this;
-	}
-
-	public BuilderTrophy<T> setReceived(final boolean isReceived) {
-		this.isReceived = isReceived;
+		this.type = trophieType;
 		return this;
 	}
 

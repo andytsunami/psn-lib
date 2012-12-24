@@ -29,7 +29,7 @@ import com.krobothsoftware.psn.internal.ModelType;
  * 
  * @see PlayStationNetworkClient#getOfficialProfile(String)
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
@@ -38,8 +38,8 @@ public class PsnProfileData extends PsnModel implements Jid {
 	private final String jid;
 	private final String avatar;
 	private final String aboutMe;
-	private final Locale countryCulture;
-	private final boolean isPlus;
+	private final Locale country;
+	private final boolean isPP;
 	private final int backgroundColor;
 	private final String panel;
 	private final int panelBackgroundColor;
@@ -49,13 +49,12 @@ public class PsnProfileData extends PsnModel implements Jid {
 	private final int levelFloor;
 	private final int levelCeiling;
 	private final int progress;
-	private final int trophyCount;
 	private final int platinum;
 	private final int gold;
 	private final int silver;
 	private final int bronze;
 
-	public transient final static Map<String, Locale> CULTURE_MAP;
+	public final static Map<String, Locale> CULTURE_MAP;
 
 	static {
 		CULTURE_MAP = new HashMap<String, Locale>();
@@ -71,15 +70,14 @@ public class PsnProfileData extends PsnModel implements Jid {
 		jid = builder.jid;
 		avatar = builder.avatar;
 		aboutMe = builder.aboutMe;
-		countryCulture = builder.countryCulture;
-		isPlus = builder.isPlus;
+		country = builder.country;
+		isPP = builder.isPP;
 		backgroundColor = builder.backgroundColor;
 		points = builder.points;
 		level = builder.level;
 		levelFloor = builder.levelFloor;
 		levelCeiling = builder.levelCeiling;
 		progress = builder.progress;
-		trophyCount = builder.trophyCount;
 		platinum = builder.platinum;
 		gold = builder.gold;
 		silver = builder.silver;
@@ -102,11 +100,11 @@ public class PsnProfileData extends PsnModel implements Jid {
 	}
 
 	public Locale getCountryCulture() {
-		return countryCulture;
+		return country;
 	}
 
 	public boolean hasPlayStationPlus() {
-		return isPlus;
+		return isPP;
 	}
 
 	public int getBackgroundColor() {
@@ -131,10 +129,6 @@ public class PsnProfileData extends PsnModel implements Jid {
 
 	public int getProgress() {
 		return progress;
-	}
-
-	public int getTrophyCount() {
-		return trophyCount;
 	}
 
 	public int getPlatinum() {
@@ -165,15 +159,15 @@ public class PsnProfileData extends PsnModel implements Jid {
 	public String toString() {
 		return String
 				.format("PsnProfileData [aboutMe=%s, countryCulture=%s, level=%s, progress=%s, psnId=%s]",
-						aboutMe, countryCulture, level, progress, jid);
+						aboutMe, country, level, progress, jid);
 	}
 
 	public static class Builder {
 		String jid;
 		String avatar;
 		String aboutMe;
-		Locale countryCulture;
-		boolean isPlus;
+		Locale country;
+		boolean isPP;
 		int backgroundColor;
 		String panel;
 		int panelBackgroundColor;
@@ -183,14 +177,14 @@ public class PsnProfileData extends PsnModel implements Jid {
 		int levelFloor;
 		int levelCeiling;
 		int progress;
-		int trophyCount;
 		int platinum;
 		int gold;
 		int silver;
 		int bronze;
 
-		public Builder(final String jid) {
+		public Builder setJid(String jid) {
 			this.jid = jid;
+			return this;
 		}
 
 		public Builder setAvatar(final String avatar) {
@@ -203,13 +197,13 @@ public class PsnProfileData extends PsnModel implements Jid {
 			return this;
 		}
 
-		public Builder setCountryCulture(final Locale countryCulture) {
-			this.countryCulture = countryCulture;
+		public Builder setCountry(final Locale country) {
+			this.country = country;
 			return this;
 		}
 
-		public Builder setPlus(final boolean isPlus) {
-			this.isPlus = isPlus;
+		public Builder setPP(final boolean isPP) {
+			this.isPP = isPP;
 			return this;
 		}
 
@@ -240,11 +234,6 @@ public class PsnProfileData extends PsnModel implements Jid {
 
 		public Builder setProgress(final int progress) {
 			this.progress = progress;
-			return this;
-		}
-
-		public Builder setTrophyCount(final int trophyCount) {
-			this.trophyCount = trophyCount;
 			return this;
 		}
 

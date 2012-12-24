@@ -28,7 +28,7 @@ import com.krobothsoftware.psn.internal.ModelType;
  * 
  * @see PlayStationNetworkClient#getOfficialTrophyList(String, String)
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
@@ -36,20 +36,20 @@ public class PsnTrophyDataOfficial extends PsnModel implements PsnTrophy, Jid {
 	private static final long serialVersionUID = -5311787059197244617L;
 	private final String jid;
 	private final PlatformType pf;
-	private final int trophyId;
+	private final int index;
 	private final String gameId;
 	private final String dateEarned;
-	private final TrophyType trophyType;
+	private final TrophyType type;
 	private final boolean isReceived;
 
 	private PsnTrophyDataOfficial(final Builder builder) {
 		super(ModelType.OFFICIAL_VERSION);
 		jid = builder.userId;
-		trophyId = builder.trophyId;
+		index = builder.index;
 		gameId = builder.gameId;
 		dateEarned = builder.dateEarned;
-		trophyType = builder.trophyType;
-		isReceived = builder.isReceived;
+		type = builder.type;
+		isReceived = (dateEarned != null) ? true : false;
 		pf = builder.pf;
 	}
 
@@ -63,8 +63,8 @@ public class PsnTrophyDataOfficial extends PsnModel implements PsnTrophy, Jid {
 	}
 
 	@Override
-	public int getTrophyId() {
-		return trophyId;
+	public int getIndex() {
+		return index;
 	}
 
 	@Override
@@ -78,8 +78,8 @@ public class PsnTrophyDataOfficial extends PsnModel implements PsnTrophy, Jid {
 	}
 
 	@Override
-	public TrophyType getTrophyType() {
-		return trophyType;
+	public TrophyType getType() {
+		return type;
 	}
 
 	@Override
@@ -91,7 +91,7 @@ public class PsnTrophyDataOfficial extends PsnModel implements PsnTrophy, Jid {
 	public String toString() {
 		return String
 				.format("ModelTrophyOfficialImpl [trophyId=%s, gameId=%s, dateEarned=%s, trophyType=%s]",
-						trophyId, gameId, dateEarned, trophyType);
+						index, gameId, dateEarned, type);
 	}
 
 	public static class Builder extends BuilderTrophy<PsnTrophyDataOfficial> {

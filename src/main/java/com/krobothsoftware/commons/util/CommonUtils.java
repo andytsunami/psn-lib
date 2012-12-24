@@ -25,9 +25,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Scanner;
 
 /**
- * Common Util class
  * 
- * @version 3.0.1
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
@@ -48,105 +47,80 @@ public final class CommonUtils {
 	}
 
 	/**
-	 * Trim off all the whitespace. {@link java.lang.String#trim()} does not
-	 * take off certain whitespace characters.
+	 * Trims all whitespace off including special characters and non breaking
+	 * space.
 	 * 
-	 * @param text
+	 * @param str
 	 *            text to trim
-	 * @return modified string
+	 * @return trimmed string
 	 */
-	public static String trim(final String text) {
-		StringBuilder buffer = new StringBuilder(text);
+	public static String trim(final String str) {
+		int count = str.length();
+		int len = str.length();
+		int st = 0;
+		int off = 0;
+		char[] val = str.toCharArray();
 
-		for (int i = 0; i < buffer.length(); i++) {
-			if (Character.isWhitespace(buffer.charAt(i))) {
-				buffer.deleteCharAt(i);
-			} else {
-				break;
-			}
-		}
+		while ((st < len) && (isWhiteSpace(val[off + st])))
+			st++;
+		while ((st < len) && (isWhiteSpace(val[off + len - 1])))
+			len--;
 
-		buffer = new StringBuilder(buffer.toString());
-
-		for (int i = buffer.length() - 1; i > 0; --i) {
-			if (Character.isWhitespace(buffer.charAt(i))) {
-				buffer.deleteCharAt(i);
-			} else {
-				break;
-			}
-		}
-
-		return buffer.toString();
+		return ((st > 0) || (len < count)) ? str.substring(st, len) : str;
 	}
 
 	/**
-	 * Trim off with character
+	 * Trims string for character
 	 * 
-	 * @param text
+	 * @param str
 	 *            text to trim
-	 * @param trimCharacter
+	 * @param ch
 	 *            trim character
-	 * @return modified string
+	 * @return trimmed string
 	 */
-	public static String trim(final String text, final char trimCharacter) {
-		StringBuilder buffer = new StringBuilder(text);
+	public static String trim(final String str, final char ch) {
+		int count = str.length();
+		int len = str.length();
+		int st = 0;
+		int off = 0;
+		char[] val = str.toCharArray();
 
-		for (int i = 0; i < buffer.length(); i++) {
-			if (trimCharacter == buffer.charAt(i)) {
-				buffer.deleteCharAt(i);
-			} else {
-				break;
-			}
+		while ((st < len) && (val[off + st] <= ch)) {
+			st++;
+		}
+		while ((st < len) && (val[off + len - 1] <= ch)) {
+			len--;
 		}
 
-		buffer = new StringBuilder(buffer.toString());
-
-		for (int i = buffer.length() - 1; i > 0; --i) {
-			if (trimCharacter == buffer.charAt(i)) {
-				buffer.deleteCharAt(i);
-			} else {
-				break;
-			}
-		}
-
-		return buffer.toString();
+		return ((st > 0) || (len < count)) ? str.substring(st, len) : str;
 	}
 
 	/**
-	 * Trims the first character for first part of string and second character
-	 * for last part of string.
+	 * Trims string with first and last characters
 	 * 
-	 * @param text
+	 * @param str
 	 *            text to trim
-	 * @param firstTrim
+	 * @param chF
 	 *            first trim character
-	 * @param secondTrim
-	 *            second trim character
-	 * @return modified string
+	 * @param chL
+	 *            last trim character
+	 * @return trimmed string
 	 */
-	public static String trim(final String text, final char firstTrim,
-			final char secondTrim) {
-		StringBuffer buffer = new StringBuffer(text);
+	public static String trim(final String str, char chF, char chL) {
+		int count = str.length();
+		int len = str.length();
+		int st = 0;
+		int off = 0;
+		char[] val = str.toCharArray();
 
-		for (int i = 0; i < buffer.length(); i++) {
-			if (firstTrim == buffer.charAt(i)) {
-				buffer.deleteCharAt(i);
-			} else {
-				break;
-			}
+		while ((st < len) && (val[off + st] <= chF)) {
+			st++;
+		}
+		while ((st < len) && (val[off + len - 1] <= chL)) {
+			len--;
 		}
 
-		buffer = new StringBuffer(buffer.toString());
-
-		for (int i = buffer.length() - 1; i > 0; --i) {
-			if (secondTrim == buffer.charAt(i)) {
-				buffer.deleteCharAt(i);
-			} else {
-				break;
-			}
-		}
-
-		return buffer.toString();
+		return ((st > 0) || (len < count)) ? str.substring(st, len) : str;
 	}
 
 	/**
@@ -193,7 +167,7 @@ public final class CommonUtils {
 		try {
 			in = new BufferedReader(new InputStreamReader(input, charset));
 
-			for (;;) {
+			while (true) {
 				final char c = (char) in.read();
 				if (c == content[count]) {
 					count++;
@@ -209,5 +183,14 @@ public final class CommonUtils {
 		} finally {
 			if (in != null) in.close();
 		}
+	}
+
+	private static boolean isWhiteSpace(char ch) {
+		if ('\u00A0' == ch) return true;
+		else if ('\u2007' == ch) return true;
+		else if ('\u202F' == ch) return true;
+		else if (Character.isWhitespace(ch)) return true;
+		else
+			return false;
 	}
 }

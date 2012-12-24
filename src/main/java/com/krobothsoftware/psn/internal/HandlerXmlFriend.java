@@ -20,7 +20,6 @@ package com.krobothsoftware.psn.internal;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import com.krobothsoftware.commons.parse.HandlerXml;
@@ -29,7 +28,7 @@ import com.krobothsoftware.psn.model.PsnFriendData;
 
 /**
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
@@ -49,24 +48,11 @@ public final class HandlerXmlFriend extends HandlerXml {
 	private static final String BRONZE = "bronze";
 
 	private final List<PsnFriendData> list;
-
-	// friend
-	private String onlineId;
-	private FriendStatus presence;
-	private String game;
-	private String avatar;
-	private String comment;
-	private boolean plus;
-
-	// trophy
-	private int level;
-	private int platinum;
-	private int gold;
-	private int silver;
-	private int bronze;
+	private final PsnFriendData.Builder builder;
 
 	public HandlerXmlFriend() {
 		list = new ArrayList<PsnFriendData>();
+		builder = new PsnFriendData.Builder();
 	}
 
 	public List<PsnFriendData> getFriendList() {
@@ -74,55 +60,47 @@ public final class HandlerXmlFriend extends HandlerXml {
 	}
 
 	@Override
-	public void startElement(final String uri, final String localName,
-			final String qName, final Attributes attributes)
-			throws SAXException {
-		final String qLocal = qLocal(qName, localName);
-		calledStartElement = true;
-		startTag = qLocal;
-
-	}
-
-	@Override
 	public void endElement(final String uri, final String localName,
 			final String qName) throws SAXException {
-		final String qLocal = qLocal(qName, localName);
 
-		if (qLocal.equalsIgnoreCase(PSN_FRIEND)) {
-			list.add(new PsnFriendData.Builder(onlineId)
-					.setCurrentPresence(presence)
-					.setCurrentGame(game.equals("null") ? null : game)
-					.setCurrentAvatar(avatar)
-					.setComment(comment.equals("null") ? null : comment)
-					.setPlaystationPlus(plus).setLevel(level)
-					.setPlatinum(platinum).setGold(gold).setSilver(silver)
-					.setBronze(bronze).build());
-		}
+		if (qLocal(qName, localName).equalsIgnoreCase(PSN_FRIEND)) list
+				.add(builder.build());
 
 	}
 
 	@Override
 	public void characters(final char[] ch, final int start, final int length)
 			throws SAXException {
-		final String qLocal = new String(ch, start, length);
 
-		if (calledStartElement) if (startTag.equalsIgnoreCase(ONLINEID)) onlineId = qLocal;
-		else if (startTag.equalsIgnoreCase(CURRENT_PRESENCE)) presence = getOnlineStatus(qLocal);
-		else if (startTag.equalsIgnoreCase(CURRENT_GAME)) game = qLocal;
-		else if (startTag.equalsIgnoreCase(CURRENT_AVATAR)) avatar = qLocal;
-		else if (startTag.equalsIgnoreCase(COMMENT)) comment = qLocal;
-		else if (startTag.equalsIgnoreCase(PLAYSTATION_PLUS)) plus = Boolean
-				.parseBoolean(qLocal);
-		else if (startTag.equalsIgnoreCase(LEVEL)) level = Integer
-				.parseInt(qLocal);
-		else if (startTag.equalsIgnoreCase(PLATINUM)) platinum = Integer
-				.parseInt(qLocal);
-		else if (startTag.equalsIgnoreCase(GOLD)) gold = Integer
-				.parseInt(qLocal);
-		else if (startTag.equalsIgnoreCase(SILVER)) silver = Integer
-				.parseInt(qLocal);
-		else if (startTag.equalsIgnoreCase(BRONZE)) bronze = Integer
-				.parseInt(qLocal);
+		String str;
+
+		if (calledStartElement) {
+			if (startTag.equalsIgnoreCase(ONLINEID)) builder
+					.setPsnId(new String(ch, start, length));
+			else if (startTag.equalsIgnoreCase(CURRENT_PRESENCE)) builder
+					.setPresence(getOnlineStatus(new String(ch, start, length)));
+			else if (startTag.equalsIgnoreCase(CURRENT_GAME)) {
+				str = new String(ch, start, length);
+				builder.setGame(str.equals("null") ? null : str);
+			} else if (startTag.equalsIgnoreCase(CURRENT_AVATAR)) builder
+					.setAvatar(new String(ch, start, length));
+			else if (startTag.equalsIgnoreCase(COMMENT)) {
+				str = new String(ch, start, length);
+				builder.setComment(str.equals("null") ? null : str);
+			} else if (startTag.equalsIgnoreCase(PLAYSTATION_PLUS)) builder
+					.setPP(Boolean.parseBoolean(new String(ch, start, length)));
+			else if (startTag.equalsIgnoreCase(LEVEL)) builder.setLevel(Integer
+					.parseInt(new String(ch, start, length)));
+			else if (startTag.equalsIgnoreCase(PLATINUM)) builder
+					.setPlatinum(Integer
+							.parseInt(new String(ch, start, length)));
+			else if (startTag.equalsIgnoreCase(GOLD)) builder.setGold(Integer
+					.parseInt(new String(ch, start, length)));
+			else if (startTag.equalsIgnoreCase(SILVER)) builder
+					.setSilver(Integer.parseInt(new String(ch, start, length)));
+			else if (startTag.equalsIgnoreCase(BRONZE)) builder
+					.setBronze(Integer.parseInt(new String(ch, start, length)));
+		}
 
 		calledStartElement = false;
 

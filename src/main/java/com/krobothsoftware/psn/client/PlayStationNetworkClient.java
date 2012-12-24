@@ -36,10 +36,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import com.krobothsoftware.commons.network.RequestBuilderAuthorization;
 import com.krobothsoftware.commons.network.CookieManager;
 import com.krobothsoftware.commons.network.NetworkHelper;
 import com.krobothsoftware.commons.network.NetworkHelper.Method;
+import com.krobothsoftware.commons.network.RequestBuilder;
 import com.krobothsoftware.commons.network.Response;
+import com.krobothsoftware.commons.network.ResponseAuthenticate;
+import com.krobothsoftware.commons.network.ResponseRedirect;
 import com.krobothsoftware.commons.network.authorization.AuthorizationManager;
 import com.krobothsoftware.commons.network.authorization.DigestAuthorization;
 import com.krobothsoftware.commons.network.values.Cookie;
@@ -53,12 +57,12 @@ import com.krobothsoftware.psn.PlatformType;
 import com.krobothsoftware.psn.PlayStationNetworkException;
 import com.krobothsoftware.psn.PlayStationNetworkLoginException;
 import com.krobothsoftware.psn.PsnUtils;
-import com.krobothsoftware.psn.internal.HandlerWebFriendGame;
-import com.krobothsoftware.psn.internal.HandlerWebFriendTrophy;
-import com.krobothsoftware.psn.internal.HandlerWebUKGame;
-import com.krobothsoftware.psn.internal.HandlerWebUKTrophy;
-import com.krobothsoftware.psn.internal.HandlerWebUSGame;
-import com.krobothsoftware.psn.internal.HandlerWebUSTrophy;
+import com.krobothsoftware.psn.internal.HandlerHtmlFriendGame;
+import com.krobothsoftware.psn.internal.HandlerHtmlFriendTrophy;
+import com.krobothsoftware.psn.internal.HandlerHtmlUKGame;
+import com.krobothsoftware.psn.internal.HandlerHtmlUKTrophy;
+import com.krobothsoftware.psn.internal.HandlerHtmlUSGame;
+import com.krobothsoftware.psn.internal.HandlerHtmlUSTrophy;
 import com.krobothsoftware.psn.internal.HandlerXmlFriend;
 import com.krobothsoftware.psn.internal.HandlerXmlGame;
 import com.krobothsoftware.psn.internal.HandlerXmlProfile;
@@ -84,7 +88,7 @@ import com.krobothsoftware.psn.model.PsnUserInfo;
  * official servers</li>
  * </ul>
  * 
- * @version 3.0.1
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  * 
@@ -156,10 +160,15 @@ public class PlayStationNetworkClient {
 	}
 
 	/**
-	 * Initialize the client and sets up authorizations.
+	 * Initialize the client and sets up authorizations, and login cookies for
+	 * US.
 	 */
 	public void init() {
 		log.info("Initializing client");
+		networkHelper.getCookieManager().putCookie(
+				PsnUtils.createLoginCookieTicket("*"));
+		networkHelper.getCookieManager().putCookie(
+				PsnUtils.createLoginCookiePsnTicket("*"));
 		try {
 			final AuthorizationManager authManager = networkHelper
 					.getAuthorizationManager();
@@ -283,12 +292,12 @@ public class PlayStationNetworkClient {
 	 * {@link #getClientFriendGameList(String)} </br>
 	 * {@link #getClientFriendTrophyList(String, String)}
 	 * 
-	 * @param progressListener
-	 *            progress listener used to monitor login process
 	 * @param username
 	 *            username which is email
 	 * @param password
 	 *            password
+	 * @param progressListener
+	 *            progress listener used to monitor login process
 	 * @return PsnId from account
 	 * @throws IllegalArgumentException
 	 *             thrown if username or password is null
@@ -300,8 +309,8 @@ public class PlayStationNetworkClient {
 	 * @throws PlayStationNetworkLoginException
 	 *             thrown if username or password is not valid
 	 */
-	public String clientLogin(final ProgressListener progressListener,
-			final String username, final String password) throws IOException,
+	public String clientLogin(final String username, final String password,
+			final ProgressListener progressListener) throws IOException,
 			PlayStationNetworkException, PlayStationNetworkLoginException {
 		Response response = null;
 		log.debug("clientLogin - Entering");
@@ -324,11 +333,10 @@ public class PlayStationNetworkClient {
 
 			try {
 				progressHelper.update("Logging in");
-				response = networkHelper
-						.setupMethod(
-								POST,
-								new URL(
-										"https://store.playstation.com/j_acegi_external_security_check?target=/external/loginDefault.action"))
+				response = new RequestBuilder(
+						POST,
+						new URL(
+								"https://store.playstation.com/j_acegi_external_security_check?target=/external/loginDefault.action"))
 						.setPayload(params, "UTF-8").execute(networkHelper);
 				response.disconnect();
 			} catch (final IOException e) {
@@ -337,23 +345,22 @@ public class PlayStationNetworkClient {
 
 			switch (response.getStatusCode()) {
 			case HttpURLConnection.HTTP_MOVED_TEMP:
-				String urlLocation = response.getConnection().getHeaderField(
-						"Location");
+				String urlLocation = ((ResponseRedirect) response)
+						.getRedirectUrl();
 
 				progressHelper.update("Authenticating");
-				isLoginValid(response = networkHelper.setupMethod(GET,
-						new URL(urlLocation)).execute(networkHelper));
+				isLoginValid(response = new RequestBuilder(GET, new URL(
+						urlLocation)).execute(networkHelper));
 				response.disconnect();
 
 				// get session id and location
-				urlLocation = response.getConnection().getHeaderField(
-						"Location");
+				urlLocation = ((ResponseRedirect) response).getRedirectUrl();
 				clientSessionId = urlLocation.substring(urlLocation
 						.indexOf("?sessionId=") + 11);
 
 				// get additional cookies
 				progressHelper.update("Authenticating");
-				response = networkHelper.setupMethod(GET, new URL(urlLocation))
+				response = new RequestBuilder(GET, new URL(urlLocation))
 						.execute(networkHelper);
 				response.disconnect();
 
@@ -375,14 +382,13 @@ public class PlayStationNetworkClient {
 
 				// US method
 				progressHelper.update("Retrieving PsnId");
-				response = networkHelper
-						.setupMethod(
-								GET,
-								new URL(
-										String.format(
-												"http://us.playstation.com/uwps/HandleIFrameRequests?sessionId=%s",
-												clientSessionId)))
-						.useCookies(false).execute(networkHelper);
+				response = new RequestBuilder(
+						GET,
+						new URL(
+								String.format(
+										"http://us.playstation.com/uwps/HandleIFrameRequests?sessionId=%s",
+										clientSessionId))).useCookies(false)
+						.execute(networkHelper);
 				response.disconnect();
 				Cookie userinfoCookie = null;
 
@@ -404,13 +410,12 @@ public class PlayStationNetworkClient {
 				if (userinfoCookie != null) {
 					progressHelper.addIncrement(1);
 					progressHelper.update("Retrieving userinfo");
-					response = networkHelper
-							.setupMethod(
-									GET,
-									new URL(
-											String.format(
-													"http://us.playstation.com/uwps/PSNLoginCookie?cookieName=%s&id=%f",
-													"userinfo", Math.random())))
+					response = new RequestBuilder(
+							GET,
+							new URL(
+									String.format(
+											"http://us.playstation.com/uwps/PSNLoginCookie?cookieName=%s&id=%f",
+											"userinfo", Math.random())))
 							.setHeader("X-Requested-With", "XMLHttpRequest")
 							.setHeader("Cookie",
 									userinfoCookie.getCookieString())
@@ -493,13 +498,12 @@ public class PlayStationNetworkClient {
 		log.debug("getFriendList - Entering");
 
 		try {
-			response = networkHelper
-					.setupMethod(
-							Method.GET,
-							new URL(
-									"https://secure.eu.playstation.com/ajax/mypsn/friend/presence/"))
+			response = new RequestBuilder(
+					Method.GET,
+					new URL(
+							"https://secure.eu.playstation.com/ajax/mypsn/friend/presence/"))
 					.setReadTimeout(0).execute(networkHelper);
-			if (response.getStatusCode() == HttpURLConnection.HTTP_MOVED_TEMP) throw new PlayStationNetworkLoginException(
+			if (response instanceof ResponseRedirect) throw new PlayStationNetworkLoginException(
 					"login cookies invalid, expired, or not found");
 			final HandlerXmlFriend friendHandler = new HandlerXmlFriend();
 			parser.parse(response.getStream(), friendHandler,
@@ -554,14 +558,14 @@ public class PlayStationNetworkClient {
 		log.debug("getClientGameList - Entering");
 
 		try {
-			response = networkHelper.setupMethod(GET,
-					new URL("http://uk.playstation.com/psn/mypsn/trophies/"))
+			response = new RequestBuilder(GET, new URL(
+					"http://uk.playstation.com/psn/mypsn/trophies/"))
 					.execute(networkHelper);
 
-			if (response.getStatusCode() == HttpURLConnection.HTTP_MOVED_TEMP) throw new PlayStationNetworkLoginException(
+			if (response instanceof ResponseRedirect) throw new PlayStationNetworkLoginException(
 					"login cookies invalid, expired, or not found");
 
-			final HandlerWebUKGame gameHandler = new HandlerWebUKGame(
+			final HandlerHtmlUKGame gameHandler = new HandlerHtmlUKGame(
 					PsnUtils.getPsnIdFromJid(clientJid));
 			parser.parse(response.getStream(), gameHandler,
 					response.getCharset());
@@ -623,20 +627,18 @@ public class PlayStationNetworkClient {
 				"invalid UK title link: " + titleLinkId);
 
 		try {
-			response = networkHelper
-					.setupMethod(
-							GET,
-							new URL(
-									String.format(
-											"http://uk.playstation.com/psn/mypsn/trophies/detail/?title=%s",
-											titleLinkId)))
-					.setHeader("Referer",
-							"http://uk.playstation.com/psn/mypsn/trophies/")
-					.execute(networkHelper);
-			if (response.getStatusCode() == HttpURLConnection.HTTP_MOVED_TEMP) throw new PlayStationNetworkLoginException(
+			response = new RequestBuilder(
+					GET,
+					new URL(
+							String.format(
+									"http://uk.playstation.com/psn/mypsn/trophies/detail/?title=%s",
+									titleLinkId))).setHeader("Referer",
+					"http://uk.playstation.com/psn/mypsn/trophies/").execute(
+					networkHelper);
+			if (response instanceof ResponseRedirect) throw new PlayStationNetworkLoginException(
 					"login cookies invalid, expired, or not found");
 
-			final HandlerWebUKTrophy trophyHandler = new HandlerWebUKTrophy(
+			final HandlerHtmlUKTrophy trophyHandler = new HandlerHtmlUKTrophy(
 					PsnUtils.getPsnIdFromJid(clientJid));
 			parser.parse(response.getStream(), trophyHandler,
 					response.getCharset());
@@ -694,20 +696,18 @@ public class PlayStationNetworkClient {
 		log.debug("getClientFriendGameList [{}] - Entering", friendPsnId);
 
 		try {
-			response = networkHelper
-					.setupMethod(
-							GET,
-							new URL(
-									String.format(
-											"http://uk.playstation.com/psn/mypsn/trophies-compare/?friend=%s&mode=FRIENDS",
-											friendPsnId)))
-					.setHeader("Referer",
-							"http://uk.playstation.com/psn/mypsn/friends/")
-					.execute(networkHelper);
-			if (response.getStatusCode() == HttpURLConnection.HTTP_MOVED_TEMP) throw new PlayStationNetworkLoginException(
+			response = new RequestBuilder(
+					GET,
+					new URL(
+							String.format(
+									"http://uk.playstation.com/psn/mypsn/trophies-compare/?friend=%s&mode=FRIENDS",
+									friendPsnId))).setHeader("Referer",
+					"http://uk.playstation.com/psn/mypsn/friends/").execute(
+					networkHelper);
+			if (response instanceof ResponseRedirect) throw new PlayStationNetworkLoginException(
 					"login cookies invalid, expired, or not found");
 
-			final HandlerWebFriendGame handler = new HandlerWebFriendGame(
+			final HandlerHtmlFriendGame handler = new HandlerHtmlFriendGame(
 					friendPsnId);
 			parser.parse(response.getStream(), handler, response.getCharset());
 			return handler.getGameList();
@@ -766,22 +766,20 @@ public class PlayStationNetworkClient {
 		log.debug("getClientFriendTrophyList [{}, {}] - Entering", friendPsnId,
 				titleLinkId);
 		try {
-			response = networkHelper
-					.setupMethod(
-							GET,
-							new URL(
-									String.format(
-											"http://uk.playstation.com/psn/mypsn/trophies-compare/detail/?title=%s&friend=%s&sortBy=game",
-											titleLinkId, friendPsnId)))
-					.setHeader(
-							"Referer",
-							"http://uk.playstation.com/psn/mypsn/trophies-compare/?friend="
-									+ friendPsnId + "&mode=FRIENDS")
-					.execute(networkHelper);
-			if (response.getStatusCode() == HttpURLConnection.HTTP_MOVED_TEMP) throw new PlayStationNetworkLoginException(
+			response = new RequestBuilder(
+					GET,
+					new URL(
+							String.format(
+									"http://uk.playstation.com/psn/mypsn/trophies-compare/detail/?title=%s&friend=%s&sortBy=game",
+									titleLinkId, friendPsnId))).setHeader(
+					"Referer",
+					"http://uk.playstation.com/psn/mypsn/trophies-compare/?friend="
+							+ friendPsnId + "&mode=FRIENDS").execute(
+					networkHelper);
+			if (response instanceof ResponseRedirect) throw new PlayStationNetworkLoginException(
 					"login cookies invalid, expired, or not found");
 
-			final HandlerWebFriendTrophy handler = new HandlerWebFriendTrophy(
+			final HandlerHtmlFriendTrophy handler = new HandlerHtmlFriendTrophy(
 					friendPsnId);
 			parser.parse(response.getStream(), handler, response.getCharset());
 			return handler.getTrophyList();
@@ -836,19 +834,18 @@ public class PlayStationNetworkClient {
 		log.debug("getPublicGameList [{}] - Entering", psnId);
 
 		try {
-			response = networkHelper
-					.setupMethod(
-							GET,
-							new URL(
-									String.format(
-											"http://us.playstation.com/playstation/psn/profile/%s/get_ordered_trophies_data",
-											psnId)))
+			response = new RequestBuilder(
+					GET,
+					new URL(
+							String.format(
+									"http://us.playstation.com/playstation/psn/profile/%s/get_ordered_trophies_data",
+									psnId)))
 					.setHeader("Referer", "http://us.playstation.com")
 					.setHeader("X-Requested-With", "XMLHttpRequest")
 					.setHeader("Accept", "text/html").useCookies(false)
 					.execute(networkHelper);
 
-			final HandlerWebUSGame gameHandler = new HandlerWebUSGame(psnId);
+			final HandlerHtmlUSGame gameHandler = new HandlerHtmlUSGame(psnId);
 			parser.parse(response.getStream(), gameHandler,
 					response.getCharset());
 			return gameHandler.getGames();
@@ -862,56 +859,8 @@ public class PlayStationNetworkClient {
 	}
 
 	/**
-	 * Retrieve public trophy list.
-	 * 
-	 * <p>
-	 * Requirements
-	 * </p>
-	 * 
-	 * <pre>
-	 *  <li>US Cookies
-	 *     - TICKET
-	 *     - PSNS2STICKET
-	 * </li>
-	 * </pre>
-	 * 
-	 * <p>
-	 * Connections Made
-	 * </p>
-	 * 
-	 * <pre>
-	 * (getGameId == true) http://us.playstation.com/playstation/psn/profiles/ (psnId) /trophies/ (trophy linkId)
-	 * http://us.playstation.com/playstation/psn/profile/ (psnId) /get_ordered_title_details_data
-	 * </pre>
-	 * 
-	 * @see PsnUtils#createLoginCookieTicket(String)
-	 * @see PsnUtils#createLoginCookiePsnTicket(String)
-	 * 
-	 * @param psnId
-	 *            psn id
-	 * @param titleLinkId
-	 *            US trophy link id
-	 * @param getGameId
-	 *            whether to retrieve <i>Official</i> game Id
-	 * @return public trophy list
-	 * @throws IllegalArgumentException
-	 *             thrown if US trophy link Id isn't in correct format
-	 * @throws PlayStationNetworkLoginException
-	 *             thrown if login cookies were invalid or not found
-	 * @throws PlayStationNetworkException
-	 *             thrown if parse error is encountered
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-	public List<PsnTrophyData> getPublicTrophyList(final String psnId,
-			final String titleLinkId, final boolean getGameId)
-			throws PlayStationNetworkException,
-			PlayStationNetworkLoginException, IOException {
-		return getPublicTrophyListInternal(psnId, titleLinkId, getGameId);
-	}
-
-	/**
-	 * Retrieve public trophy list.
+	 * Retrieve public trophy list. If <gameId> is null, it will be set only if
+	 * there is a earned trophy. Needs to extract Id from image.
 	 * 
 	 * <p>
 	 * Requirements
@@ -950,89 +899,51 @@ public class PlayStationNetworkClient {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public List<PsnTrophyData> getPublicTrophyList(final String psnId,
-			final String titleLinkId, final String gameId)
-			throws PlayStationNetworkException,
-			PlayStationNetworkLoginException, IOException {
-		return getPublicTrophyListInternal(psnId, titleLinkId, gameId);
-	}
-
-	private List<PsnTrophyData> getPublicTrophyListInternal(final String psnId,
-			final String titleLinkId, final Object option) throws IOException,
+			final String titleLinkId, String gameId) throws IOException,
 			PlayStationNetworkException, PlayStationNetworkLoginException {
 		Response response = null;
-		String methodGameId = null;
-		HandlerWebUSTrophy trophyHandler = null;
-		log.debug("getPublicTrophyListInternal [{}, {}, {}] - Entering", psnId,
-				titleLinkId, option);
+		log.debug("getPublicTrophyList [{}, {}, {}] - Entering", psnId,
+				titleLinkId, gameId);
 
 		if (PsnUtils.isValidGameId(titleLinkId)) throw new IllegalArgumentException(
 				"invalid US title link: " + titleLinkId);
 
 		try {
 
-			if (option instanceof Boolean && option == Boolean.TRUE) {
-
-				response = networkHelper
-						.setupMethod(
-								GET,
-								new URL(
-										String.format(
-												"http://us.playstation.com/playstation/psn/profiles/%s/trophies/%s",
-												psnId, titleLinkId)))
-						.setHeader("Referer",
-								"http://us.playstation.com/playstation/psn/profiles/")
-						.setHeader("Accept", "text/html")
-						.execute(networkHelper);
-				trophyHandler = new HandlerWebUSTrophy(true);
-				if (response.getStatusCode() == HttpURLConnection.HTTP_NOT_FOUND) throw new PlayStationNetworkException(
-						"PsnId or gameId invalid");
-				parser.parse(response.getStream(), trophyHandler,
-						response.getCharset());
-				response.disconnect();
-				methodGameId = trophyHandler.getGameId();
-			}
-
 			final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
 			params.add(new NameValuePair("sortBy", "id_asc"));
 			params.add(new NameValuePair("titleId", titleLinkId));
 
-			response = networkHelper
-					.setupMethod(
-							POST,
-							new URL(
-									String.format(
-											"http://us.playstation.com/playstation/psn/profile/%s/get_ordered_title_details_data",
-											psnId)))
+			response = new RequestBuilder(
+					POST,
+					new URL(
+							String.format(
+									"http://us.playstation.com/playstation/psn/profile/%s/get_ordered_title_details_data",
+									psnId)))
 					.setHeader("Referer", "http://us.playstation.com")
 					.setHeader("X-Requested-With", "XMLHttpRequest")
 					.setHeader("Accept", "text/html")
 					.setPayload(params, "UTF-8").execute(networkHelper);
 
-			trophyHandler = new HandlerWebUSTrophy(psnId, methodGameId);
-			parser.parse(response.getStream(), trophyHandler,
-					response.getCharset());
+			HandlerHtmlUSTrophy handler = new HandlerHtmlUSTrophy(psnId, gameId);
+			parser.parse(response.getStream(), handler, response.getCharset());
 			response.disconnect();
-			switch (trophyHandler.getResponseId()) {
-			case 1:
-				throw new PlayStationNetworkException("psnId invalid, empty");
-			case 2:
-				throw new PlayStationNetworkException("psnId invaid");
+			switch (handler.getResponseId()) {
 			case -1:
-				new PlayStationNetworkException(
-						"US title link or psnId invalid").printStackTrace();
-				return null;
+				throw new PlayStationNetworkException(
+						"US title link or psnId invalid");
 			case -2:
 				throw new PlayStationNetworkLoginException(
 						"TICKET and PSN2STICKET cookies were not present, invalid, or expired");
 
 			}
-			return trophyHandler.getTrophies();
+			return handler.getTrophies();
 		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
 					"Unexpected error occurred while parsing", e);
 		} finally {
 			if (response != null) response.disconnect();
-			log.debug("getPublicTrophyListInternal - Exiting");
+			log.debug("getPublicTrophyList - Exiting");
 		}
 
 	}
@@ -1079,16 +990,21 @@ public class PlayStationNetworkClient {
 					"<profile platform='ps3' sv='%s'><jid>%s</jid></profile>",
 					PS3_FIRMWARE_VERSION, jid);
 
-			response = networkHelper
-					.setupMethod(
-							POST,
-							new URL(
-									"http://getprof.us.np.community.playstation.net/basic_view/func/get_profile"))
+			response = new RequestBuilderAuthorization(
+					POST,
+					new URL(
+							"http://getprof.us.np.community.playstation.net/basic_view/func/get_profile"))
 					.setHeader("Content-Type", "text/xml; charset=UTF-8")
 					.setHeader("Accept-Encoding", "identity")
 					.setHeader("User-Agent", AGENT_PS3_COMMUNITY)
 					.setPayload(xmlPost.getBytes("UTF-8"))
 					.execute(networkHelper);
+
+			if (response instanceof ResponseAuthenticate) {
+				log.error("Unauthorized [{}]",
+						((ResponseAuthenticate) response).getAuthentication());
+				throw new IOException("Authorization required");
+			}
 
 			parser.parse(response.getStream(), handlerXmlProfile,
 					response.getCharset());
@@ -1099,16 +1015,21 @@ public class PlayStationNetworkClient {
 					.format("<nptrophy platform='ps3' sv='%s'><jid>%s</jid></nptrophy>",
 							PS3_FIRMWARE_VERSION, jid);
 
-			response = networkHelper
-					.setupMethod(
-							POST,
-							new URL(
-									"http://trophy.ww.np.community.playstation.net/trophy/func/get_user_info"))
+			response = new RequestBuilderAuthorization(
+					POST,
+					new URL(
+							"http://trophy.ww.np.community.playstation.net/trophy/func/get_user_info"))
 					.setHeader("Content-Type", "text/xml; charset=UTF-8")
 					.setHeader("Accept-Encoding", "identity")
 					.setHeader("User-Agent", AGENT_PS3_COMMUNITY)
 					.setPayload(xmlPost.getBytes("UTF-8"))
 					.execute(networkHelper);
+
+			if (response instanceof ResponseAuthenticate) {
+				log.error("Unauthorized [{}]",
+						((ResponseAuthenticate) response).getAuthentication());
+				throw new IOException("Authorization required");
+			}
 
 			parser.parse(response.getStream(), handlerXmlProfile,
 					response.getCharset());
@@ -1158,23 +1079,20 @@ public class PlayStationNetworkClient {
 				userAgent = AGENT_PSP_UPDATE;
 				break;
 			}
-			response = networkHelper
-					.setupMethod(
-							GET,
-							new URL(
-									String.format(
-											"http://%s.%s.update.playstation.%s/update/%s/%s/us/%s-updatelist.%s",
-											platform == PlatformType.PSP ? "fu01"
-													: "fus01",
-											platform.getTypeString(),
-											platform == PlatformType.PSP ? "org"
-													: "net",
-											platform.getTypeString(),
-											platform == PlatformType.PSP ? "list2"
-													: "list",
-											platform.getTypeString(),
-											platform == PlatformType.VITA ? "xml"
-													: "txt")))
+			response = new RequestBuilder(
+					GET,
+					new URL(
+							String.format(
+									"http://%s.%s.update.playstation.%s/update/%s/%s/us/%s-updatelist.%s",
+									platform == PlatformType.PSP ? "fu01"
+											: "fus01",
+									platform.getTypeString(),
+									platform == PlatformType.PSP ? "org"
+											: "net", platform.getTypeString(),
+									platform == PlatformType.PSP ? "list2"
+											: "list", platform.getTypeString(),
+									platform == PlatformType.VITA ? "xml"
+											: "txt")))
 					.setHeader("User-Agent", userAgent)
 					.setHeader("Accept-Encoding", "identity")
 					.execute(networkHelper);
@@ -1256,15 +1174,20 @@ public class PlayStationNetworkClient {
 		try {
 
 			// searchjid.usa should work with all countries
-			response = networkHelper
-					.setupMethod(
-							POST,
-							new URL(
-									"http://searchjid.usa.np.community.playstation.net/basic_view/func/search_jid"))
+			response = new RequestBuilderAuthorization(
+					POST,
+					new URL(
+							"http://searchjid.usa.np.community.playstation.net/basic_view/func/search_jid"))
 					.setPayload(xmlPost.getBytes("UTF-8"))
 					.setHeader("User-Agent", AGENT_PS3_COMMUNITY)
 					.setHeader("Content-Type", "text/xml; charset=UTF-8")
 					.execute(networkHelper);
+
+			if (response instanceof ResponseAuthenticate) {
+				log.error("Unauthorized [{}]",
+						((ResponseAuthenticate) response).getAuthentication());
+				throw new IOException("Authorization required");
+			}
 			final String data = CommonUtils.getContentFromInputStream(
 					response.getStream(), response.getCharset());
 
@@ -1340,16 +1263,21 @@ public class PlayStationNetworkClient {
 							PS3_FIRMWARE_VERSION, jid, start, max,
 							getPlatformString(platforms));
 
-			response = networkHelper
-					.setupMethod(
-							POST,
-							new URL(
-									"http://trophy.ww.np.community.playstation.net/trophy/func/get_title_list"))
+			response = new RequestBuilderAuthorization(
+					POST,
+					new URL(
+							"http://trophy.ww.np.community.playstation.net/trophy/func/get_title_list"))
 					.setHeader("User-Agent", AGENT_PS3_APPLICATION)
 					.setHeader("Content-Type", "text/xml; charset=UTF-8")
 					.setHeader("Accept-Encoding", "identity")
 					.setPayload(xmlPost.getBytes("UTF-8"))
 					.execute(networkHelper);
+
+			if (response instanceof ResponseAuthenticate) {
+				log.error("Unauthorized [{}]",
+						((ResponseAuthenticate) response).getAuthentication());
+				throw new IOException("Authorization required");
+			}
 
 			final HandlerXmlGame gameHandler = new HandlerXmlGame(jid);
 			parser.parse(response.getStream(), gameHandler,
@@ -1416,23 +1344,28 @@ public class PlayStationNetworkClient {
 					.format("<nptrophy platform='ps3' sv='%s'><jid>%s</jid><list><info npcommid='%s'><target>FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</target></info></list></nptrophy>",
 							PS3_FIRMWARE_VERSION, jid, gameId);
 
-			response = networkHelper
-					.setupMethod(
-							POST,
-							new URL(
-									"http://trophy.ww.np.community.playstation.net/trophy/func/get_trophies"))
+			response = new RequestBuilderAuthorization(
+					POST,
+					new URL(
+							"http://trophy.ww.np.community.playstation.net/trophy/func/get_trophies"))
 					.setHeader("User-Agent", AGENT_PS3_APPLICATION)
 					.setHeader("Content-Type", "text/xml; charset=UTF-8")
 					.setHeader("Accept-Encoding", "identity")
 					.setPayload(xmlPost.getBytes("UTF-8"))
 					.execute(networkHelper);
 
+			if (response instanceof ResponseAuthenticate) {
+				log.error("Unauthorized [{}]",
+						((ResponseAuthenticate) response).getAuthentication());
+				throw new IOException("Authorization required");
+			}
+
 			final HandlerXmlTrophy trophyHandler = new HandlerXmlTrophy(jid);
 			parser.parse(response.getStream(), trophyHandler,
 					response.getCharset());
 			if (trophyHandler.getResult().equals("05")) throw new PlayStationNetworkException(
 					"jid invalid");
-			return trophyHandler.getTrophies();
+			return trophyHandler.getTrophyList();
 		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
 					"Unexpected error occurred while parsing", e);
@@ -1495,23 +1428,28 @@ public class PlayStationNetworkClient {
 							PS3_FIRMWARE_VERSION, jid, max,
 							getPlatformString(platforms));
 
-			response = networkHelper
-					.setupMethod(
-							POST,
-							new URL(
-									"http://trophy.ww.np.community.playstation.net/trophy/func/get_latest_trophies"))
+			response = new RequestBuilderAuthorization(
+					POST,
+					new URL(
+							"http://trophy.ww.np.community.playstation.net/trophy/func/get_latest_trophies"))
 					.setHeader("User-Agent", AGENT_PS3_APPLICATION)
 					.setHeader("Content-Type", "text/xml; charset=UTF-8")
 					.setHeader("Accept-Encoding", "identity")
 					.setPayload(xmlPost.getBytes("UTF-8"))
 					.execute(networkHelper);
 
+			if (response instanceof ResponseAuthenticate) {
+				log.error("Unauthorized [{}]",
+						((ResponseAuthenticate) response).getAuthentication());
+				throw new IOException("Authorization required");
+			}
+
 			final HandlerXmlTrophy trophyHandler = new HandlerXmlTrophy(jid);
 			parser.parse(response.getStream(), trophyHandler,
 					response.getCharset());
 			if (trophyHandler.getResult().equals("05")) throw new PlayStationNetworkException(
 					"Id invalid");
-			return trophyHandler.getTrophies();
+			return trophyHandler.getTrophyList();
 		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
 					"Unexpected error occurred while parsing", e);
@@ -1577,23 +1515,28 @@ public class PlayStationNetworkClient {
 					.format("<nptrophy platform='ps3' sv='%s'><jid>%s</jid><max>%d</max><since>%s</since>%s</nptrophy>",
 							PS3_FIRMWARE_VERSION, jid, max, since,
 							getPlatformString(platforms));
-			response = networkHelper
-					.setupMethod(
-							Method.POST,
-							new URL(
-									"http://trophy.ww.np.community.playstation.net/trophy/func/get_latest_trophies"))
+			response = new RequestBuilderAuthorization(
+					Method.POST,
+					new URL(
+							"http://trophy.ww.np.community.playstation.net/trophy/func/get_latest_trophies"))
 					.setHeader("User-Agent", AGENT_PS3_APPLICATION)
 					.setHeader("Content-Type", "text/xml; charset=UTF-8")
 					.setHeader("Accept-Encoding", "identity")
 					.setPayload(xmlPost.getBytes("UTF-8"))
 					.execute(networkHelper);
 
+			if (response instanceof ResponseAuthenticate) {
+				log.error("Unauthorized [{}]",
+						((ResponseAuthenticate) response).getAuthentication());
+				throw new IOException("Authorization required");
+			}
+
 			final HandlerXmlTrophy trophyHandler = new HandlerXmlTrophy(jid);
 			parser.parse(response.getStream(), trophyHandler,
 					response.getCharset());
 			if (trophyHandler.getResult().equals("05")) throw new PlayStationNetworkException(
 					"jid invalid");
-			return trophyHandler.getTrophies();
+			return trophyHandler.getTrophyList();
 
 		} catch (final ParseException e) {
 			throw new PlayStationNetworkException(
@@ -1635,12 +1578,12 @@ public class PlayStationNetworkClient {
 	 * 
 	 * @see #clientLogin(ProgressListener, String, String)
 	 * 
-	 * @param progressListener
-	 *            progress listener
 	 * @param username
 	 *            username which is email
 	 * @param password
 	 *            password
+	 * @param progressListener
+	 *            progress listener
 	 * @throws IllegalArgumentException
 	 *             thrown if username or password is null
 	 * @throws IOException
@@ -1651,8 +1594,8 @@ public class PlayStationNetworkClient {
 	 * @throws PlayStationNetworkLoginException
 	 *             thrown if username or password is not valid
 	 */
-	public void loginUK(final ProgressListener progressListener,
-			final String username, final String password) throws IOException,
+	public void loginUK(final String username, final String password,
+			final ProgressListener progressListener) throws IOException,
 			PlayStationNetworkException, PlayStationNetworkLoginException {
 		Response response = null;
 		log.debug("loginUK - Entering");
@@ -1674,11 +1617,10 @@ public class PlayStationNetworkClient {
 
 			try {
 				progressHelper.update("Logging in");
-				response = networkHelper
-						.setupMethod(
-								POST,
-								new URL(
-										"https://store.playstation.com/j_acegi_external_security_check?target=/external/loginDefault.action"))
+				response = new RequestBuilder(
+						POST,
+						new URL(
+								"https://store.playstation.com/j_acegi_external_security_check?target=/external/loginDefault.action"))
 						.setPayload(params, "UTF-8").execute(networkHelper);
 				response.disconnect();
 			} catch (final IOException e) {
@@ -1687,23 +1629,22 @@ public class PlayStationNetworkClient {
 
 			switch (response.getStatusCode()) {
 			case HttpURLConnection.HTTP_MOVED_TEMP:
-				String urlLocation = response.getConnection().getHeaderField(
-						"Location");
+				String urlLocation = ((ResponseRedirect) response)
+						.getRedirectUrl();
 
 				progressHelper.update("Authenticating");
-				isLoginValid(response = networkHelper.setupMethod(GET,
-						new URL(urlLocation)).execute(networkHelper));
+				isLoginValid(response = new RequestBuilder(GET, new URL(
+						urlLocation)).execute(networkHelper));
 				response.disconnect();
 
 				// get session id and location
-				urlLocation = response.getConnection().getHeaderField(
-						"Location");
+				urlLocation = ((ResponseRedirect) response).getRedirectUrl();
 				clientSessionId = urlLocation.substring(urlLocation
 						.indexOf("?sessionId=") + 11);
 
 				// get additional cookies
 				progressHelper.update("Authenticating");
-				response = networkHelper.setupMethod(GET, new URL(urlLocation))
+				response = new RequestBuilder(GET, new URL(urlLocation))
 						.execute(networkHelper);
 				response.disconnect();
 				progressHelper.finish("Successfully logged in");
@@ -1767,12 +1708,12 @@ public class PlayStationNetworkClient {
 	 * @see PsnUtils#createLoginCookieTicket(String)
 	 * @see PsnUtils#createLoginCookiePsnTicket(String)
 	 * 
-	 * @param progressListener
-	 *            progress listener
 	 * @param username
 	 *            username which is email
 	 * @param password
 	 *            password
+	 * @param progressListener
+	 *            progress listener
 	 * @throws IllegalArgumentException
 	 *             thrown if username or password is null
 	 * @throws IOException
@@ -1783,8 +1724,8 @@ public class PlayStationNetworkClient {
 	 * @throws PlayStationNetworkLoginException
 	 *             thrown if username or password is not valid
 	 */
-	public void loginUS(final ProgressListener progressListener,
-			final String username, final String password) throws IOException,
+	public void loginUS(final String username, final String password,
+			final ProgressListener progressListener) throws IOException,
 			PlayStationNetworkException, PlayStationNetworkLoginException {
 		Response response = null;
 		log.debug("loginUS - Entering");
@@ -1805,11 +1746,10 @@ public class PlayStationNetworkClient {
 			params.add(new NameValuePair("service-entity", "psn"));
 
 			progressHelper.update("Logging in");
-			response = networkHelper
-					.setupMethod(
-							POST,
-							new URL(
-									"https://account.sonyentertainmentnetwork.com/external/auth/login!authenticate.action"))
+			response = new RequestBuilder(
+					POST,
+					new URL(
+							"https://account.sonyentertainmentnetwork.com/external/auth/login!authenticate.action"))
 					.setHeader(
 							"Referer",
 							"https://account.sonyentertainmentnetwork.com/external/auth/login.action?request_locale=en_US&service-entity=psn&returnURL=https://us.playstation.com/uwps/PSNTicketRetrievalGenericServlet")
@@ -1817,11 +1757,13 @@ public class PlayStationNetworkClient {
 			response.disconnect();
 			switch (response.getStatusCode()) {
 			case HttpURLConnection.HTTP_MOVED_TEMP:
-				final String urlLocation = response.getConnection()
-						.getHeaderField("Location");
+				final String urlLocation = ((ResponseRedirect) response)
+						.getRedirectUrl();
 				progressHelper.update("Authenticating");
-				response = networkHelper.setupMethod(GET, new URL(urlLocation))
-						.setHeader("Referer", "https://us.playstation.com")
+				response = new RequestBuilder(GET, new URL(urlLocation))
+						.setHeader(
+								"Referer",
+								"https://account.sonyentertainmentnetwork.com/external/auth/login.action?request_locale=en_US&service-entity=psn&returnURL=https://us.playstation.com/uwps/PSNTicketRetrievalGenericServlet")
 						.execute(networkHelper);
 				response.disconnect();
 
@@ -1830,14 +1772,13 @@ public class PlayStationNetworkClient {
 						.indexOf("?sessionId=") + 11);
 
 				progressHelper.update("Authenticating");
-				response = networkHelper
-						.setupMethod(
-								Method.GET,
-								new URL(
-										String.format(
-												"http://us.playstation.com/uwps/HandleIFrameRequests?sessionId=%s",
-												clientSessionId)))
-						.useCookies(false).execute(networkHelper);
+				response = new RequestBuilder(
+						Method.GET,
+						new URL(
+								String.format(
+										"http://us.playstation.com/uwps/HandleIFrameRequests?sessionId=%s",
+										clientSessionId)))
+						.execute(networkHelper);
 				response.disconnect();
 				progressHelper.finish("Successfully logged in");
 				break;
@@ -1860,7 +1801,7 @@ public class PlayStationNetworkClient {
 
 	private boolean isLoginValid(final Response response) throws IOException,
 			PlayStationNetworkLoginException {
-		if (response.getStatusCode() == HttpURLConnection.HTTP_MOVED_TEMP) return true;
+		if (response instanceof ResponseRedirect) return true;
 
 		if (CommonUtils.streamingContains(response.getStream(), "Incorrect",
 				response.getCharset())) {

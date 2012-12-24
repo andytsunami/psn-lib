@@ -30,12 +30,11 @@ import org.xml.sax.SAXException;
 
 import com.krobothsoftware.commons.parse.HandlerXml;
 import com.krobothsoftware.psn.PlatformType;
-import com.krobothsoftware.psn.TrophyType;
 import com.krobothsoftware.psn.model.PsnTrophyDataOfficial;
 
 /**
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
@@ -49,25 +48,18 @@ public final class HandlerXmlTrophy extends HandlerXml {
 	private static final String TROPHY_ID = "id";
 	private static final String TROPHY_TYPE = "type";
 
-	private List<PsnTrophyDataOfficial> psnTrophyList;
+	private final List<PsnTrophyDataOfficial> list;
+	private final PsnTrophyDataOfficial.Builder builder;
 
 	private String result;
-	private String gameId;
-
-	private PlatformType pf;
-	private int trophyId;
-	private String dateEarned;
-	private TrophyType trophyType;
-
-	private final String psnId;
 
 	public HandlerXmlTrophy(final String psnId) {
-		this.psnId = psnId;
+		list = new ArrayList<PsnTrophyDataOfficial>();
+		builder = new PsnTrophyDataOfficial.Builder(psnId);
 	}
 
-	public List<PsnTrophyDataOfficial> getTrophies() {
-		return psnTrophyList != null ? psnTrophyList
-				: new ArrayList<PsnTrophyDataOfficial>();
+	public List<PsnTrophyDataOfficial> getTrophyList() {
+		return list;
 	}
 
 	public String getResult() {
@@ -78,34 +70,34 @@ public final class HandlerXmlTrophy extends HandlerXml {
 	public void startElement(final String uri, final String localName,
 			final String qName, final Attributes attributes)
 			throws SAXException {
-		startTag = qLocal(qName, localName);
-		calledStartElement = true;
+		super.startElement(uri, localName, qName, attributes);
 
 		if (startTag.equalsIgnoreCase(NPTROPHY)) {
 			result = attributes.getValue("result");
 		} else if (startTag.equalsIgnoreCase(INFO)) {
-			gameId = attributes.getValue(NPCOMMID);
-			pf = PlatformType.getPlatform(attributes.getValue(PF));
+			builder.setGameId(attributes.getValue(NPCOMMID));
+			builder.setPlatform(PlatformType.getPlatform(attributes
+					.getValue(PF)));
 		} else if (startTag.equalsIgnoreCase(TROPHY)) {
-			trophyId = Integer.parseInt(attributes.getValue(TROPHY_ID));
-			if (attributes.getIndex(NPCOMMID) != -1) gameId = attributes
-					.getValue(NPCOMMID);
+			builder.setIndex(Integer.parseInt(attributes.getValue(TROPHY_ID)));
+			if (attributes.getIndex(NPCOMMID) != -1) builder
+					.setGameId(attributes.getValue(NPCOMMID));
 			switch (Integer.parseInt(attributes.getValue(TROPHY_TYPE))) {
 			case 0:
-				trophyType = BRONZE;
+				builder.setTrophyType(BRONZE);
 				break;
 			case 1:
-				trophyType = SILVER;
+				builder.setTrophyType(SILVER);
 				break;
 			case 2:
-				trophyType = GOLD;
+				builder.setTrophyType(GOLD);
 				break;
 			case 3:
-				trophyType = PLATINUM;
+				builder.setTrophyType(PLATINUM);
 				break;
 			}
-			if (attributes.getIndex(PF) != -1) pf = PlatformType
-					.getPlatform(attributes.getValue(PF));
+			if (attributes.getIndex(PF) != -1) builder.setPlatform(PlatformType
+					.getPlatform(attributes.getValue(PF)));
 
 		}
 	}
@@ -113,26 +105,20 @@ public final class HandlerXmlTrophy extends HandlerXml {
 	@Override
 	public void endElement(final String uri, final String localName,
 			final String qName) throws SAXException {
-		final String qLocal = qLocal(qName, localName);
 
-		if (qLocal.equalsIgnoreCase(TROPHY)) {
-			if (psnTrophyList == null) psnTrophyList = new ArrayList<PsnTrophyDataOfficial>();
-			psnTrophyList.add(new PsnTrophyDataOfficial.Builder(psnId)
-					.setPlatform(pf).setTrophyId(trophyId).setGameId(gameId)
-					.setDateEarned(dateEarned).setTrophyType(trophyType)
-					.build());
-		}
-
+		if (qLocal(qName, localName).equalsIgnoreCase(TROPHY)) list.add(builder
+				.build());
 	}
 
 	@Override
 	public void characters(final char[] ch, final int start, final int length)
 			throws SAXException {
-		if (calledStartElement) if (startTag.equalsIgnoreCase(TROPHY)) dateEarned = new String(
-				ch, start, length);
+		if (calledStartElement) {
+			if (startTag.equalsIgnoreCase(TROPHY)) builder
+					.setDateEarned(new String(ch, start, length));
+		}
 
 		calledStartElement = false;
-
 	}
 
 }

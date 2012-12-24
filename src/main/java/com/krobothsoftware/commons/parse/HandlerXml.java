@@ -17,45 +17,22 @@
 
 package com.krobothsoftware.commons.parse;
 
-import javax.xml.parsers.SAXParser;
-
 import com.krobothsoftware.commons.progress.ProgressHelper;
 
 /**
  * Base Handler for XML data
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public abstract class HandlerXml extends Handler {
-	protected SAXParser xmlParser;
-	protected String startTag;
-	protected boolean calledStartElement;
-
-	void setParser(final SAXParser xmlParser) {
-		this.xmlParser = xmlParser;
-	}
-
 	public HandlerXml(final ProgressHelper progressHelper) {
 		super(progressHelper);
 	}
 
 	public HandlerXml() {
 
-	}
-
-	/**
-	 * Gets correct qlocal from XML Handler
-	 * 
-	 * @param qName
-	 *            qname
-	 * @param localname
-	 *            localname
-	 * @return correct qLocal
-	 */
-	protected final String qLocal(final String qName, final String localname) {
-		return qName;
 	}
 
 }

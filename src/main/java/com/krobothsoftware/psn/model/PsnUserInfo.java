@@ -30,7 +30,7 @@ import com.krobothsoftware.psn.internal.ModelType;
  * 
  * @see PlayStationNetworkClient#getClientUserInfo()
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */

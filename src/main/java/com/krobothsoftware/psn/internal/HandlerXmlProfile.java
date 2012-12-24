@@ -17,8 +17,6 @@
 
 package com.krobothsoftware.psn.internal;
 
-import java.util.Locale;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -27,7 +25,7 @@ import com.krobothsoftware.psn.model.PsnProfileData;
 
 /**
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
@@ -55,40 +53,19 @@ public final class HandlerXmlProfile extends HandlerXml {
 	private static final int DEFAULT_COLOR = 0x989898;
 
 	private String id;
-	private String avatar;
-	private String aboutMe;
-	private Locale countryCulture;
-	private boolean isPlus;
 	private int backgroundColor;
-	private String panel;
-	private int panelBackgroundColor;
 
-	private int points;
-	private int level;
-	private int levelFloor;
-	private int levelCeiling;
-	private int progress;
-	private int platinum;
-	private int gold;
-	private int silver;
-	private int bronze;
+	private final PsnProfileData.Builder builder;
+
+	public HandlerXmlProfile() {
+		builder = new PsnProfileData.Builder();
+	}
 
 	public PsnProfileData getProfile() {
 		if (id == null) return null;
-		if (backgroundColor == 0) {
-			// set default
-			backgroundColor = DEFAULT_COLOR;
-		}
+		if (backgroundColor == 0) builder.setBackgroundColor(DEFAULT_COLOR);
 
-		return new PsnProfileData.Builder(id).setAvatar(avatar)
-				.setAboutMe(aboutMe).setCountryCulture(countryCulture)
-				.setPlus(isPlus).setBackgroundColor(backgroundColor)
-				.setPoints(points).setLevel(level).setLevelFloor(levelFloor)
-				.setLevelCeiling(levelCeiling).setProgress(progress)
-				.setPlatinum(platinum).setGold(gold).setSilver(silver)
-				.setBronze(bronze).setPanel(panel)
-				.setPanelBackgroundColor(panelBackgroundColor)
-				.setTrophyCount(bronze + silver + gold + platinum).build();
+		return builder.setBackgroundColor(backgroundColor).setJid(id).build();
 
 	}
 
@@ -96,61 +73,61 @@ public final class HandlerXmlProfile extends HandlerXml {
 	public void startElement(final String uri, final String localName,
 			final String qName, final Attributes attributes)
 			throws SAXException {
-
-		startTag = qLocal(qName, localName);
-		calledStartElement = true;
+		super.startElement(uri, localName, qName, attributes);
 
 		if (startTag.equalsIgnoreCase(LEVEL)) {
-			levelFloor = Integer.parseInt(attributes.getValue(LEVEL_BASE));
-			levelCeiling = Integer.parseInt(attributes.getValue(LEVEL_NEXT));
-			progress = Integer.parseInt(attributes.getValue(LEVEL_PROGRESS));
+			builder.setLevelFloor(Integer.parseInt(attributes
+					.getValue(LEVEL_BASE)));
+			builder.setLevelCeiling(Integer.parseInt(attributes
+					.getValue(LEVEL_NEXT)));
+			builder.setProgress(Integer.parseInt(attributes
+					.getValue(LEVEL_PROGRESS)));
 		} else if (startTag.equalsIgnoreCase(TYPES)) {
-			platinum = Integer.parseInt(attributes.getValue(TYPES_PLATINUM));
-			gold = Integer.parseInt(attributes.getValue(TYPES_GOLD));
-			silver = Integer.parseInt(attributes.getValue(TYPES_SILVER));
-			bronze = Integer.parseInt(attributes.getValue(TYPES_BRONZE));
-		} else if (startTag.equalsIgnoreCase(PANEL)) {
-			panelBackgroundColor = Integer.parseInt(
-					attributes.getValue(PANEL_BGC), 16);
-		}
+			builder.setPlatinum(Integer.parseInt(attributes
+					.getValue(TYPES_PLATINUM)));
+			builder.setGold(Integer.parseInt(attributes.getValue(TYPES_GOLD)));
+			builder.setSilver(Integer.parseInt(attributes
+					.getValue(TYPES_SILVER)));
+			builder.setBronze(Integer.parseInt(attributes
+					.getValue(TYPES_BRONZE)));
+		} else if (startTag.equalsIgnoreCase(PANEL)) builder
+				.setPanelBackgroundColor(Integer.parseInt(
+						attributes.getValue(PANEL_BGC), 16));
+
 	}
 
 	@Override
 	public void characters(final char[] ch, final int start, final int length)
 			throws SAXException {
 
-		if (calledStartElement) {
-			if (startTag.equalsIgnoreCase(ONLINE_NAME)) {
-				id = new String(ch, start, length);
-			} else if (startTag.equalsIgnoreCase(AVATAR)) {
-				avatar = new String(ch, start, length);
-			} else if (startTag.equalsIgnoreCase(ABOUT_ME)) {
-				aboutMe = new String(ch, start, length);
-			} else if (startTag.equalsIgnoreCase(COUNTRY)) {
-				countryCulture = PsnProfileData.CULTURE_MAP.get(new String(ch,
-						start, length).toUpperCase());
-			} else if (startTag.equalsIgnoreCase(PLUS)) {
-				final String tmp = new String(ch, start, length);
-				if (tmp.equals("0")) isPlus = false;
-				else
-					isPlus = true;
-			} else if (startTag.equals(COLOR)) {
-				String tmp = new String(ch, start, length);
-				tmp = tmp.substring(8, tmp.length() - 2);
-				backgroundColor = Integer.parseInt(tmp, 16);
-			}
+		String str;
 
-			if (startTag.equalsIgnoreCase(POINT)) {
-				points = Integer.parseInt(new String(ch, start, length));
-			} else if (startTag.equalsIgnoreCase(LEVEL)) {
-				level = Integer.parseInt(new String(ch, start, length));
-			} else if (startTag.equalsIgnoreCase(PANEL)) {
-				panel = new String(ch, start, length);
-			}
+		if (calledStartElement) {
+			if (startTag.equalsIgnoreCase(ONLINE_NAME)) id = new String(ch,
+					start, length);
+			else if (startTag.equalsIgnoreCase(AVATAR)) builder
+					.setAvatar(new String(ch, start, length));
+			else if (startTag.equalsIgnoreCase(ABOUT_ME)) builder
+					.setAboutMe(new String(ch, start, length));
+			else if (startTag.equalsIgnoreCase(COUNTRY)) builder
+					.setCountry(PsnProfileData.CULTURE_MAP.get(new String(ch,
+							start, length).toUpperCase()));
+			else if (startTag.equalsIgnoreCase(PLUS)) builder.setPP(new String(
+					ch, start, length).equals("0") ? false : true);
+			else if (startTag.equals(COLOR)) {
+				str = new String(ch, start, length);
+				str = str.substring(8, str.length() - 2);
+				backgroundColor = Integer.parseInt(str, 16);
+			} else if (startTag.equalsIgnoreCase(POINT)) builder
+					.setPoints(Integer.parseInt(new String(ch, start, length)));
+			else if (startTag.equalsIgnoreCase(LEVEL)) builder.setLevel(Integer
+					.parseInt(new String(ch, start, length)));
+			else if (startTag.equalsIgnoreCase(PANEL)) builder
+					.setPanel(new String(ch, start, length));
+
 		}
 
 		calledStartElement = false;
 
 	}
-
 }

@@ -29,7 +29,7 @@ import com.krobothsoftware.psn.model.PsnGameDataOfficial;
 
 /**
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
@@ -47,25 +47,18 @@ public final class HandlerXmlGame extends HandlerXml {
 	private static final String LAST_UPDATED = "last-updated";
 
 	private String result;
-	private String npCommid;
-	private PlatformType pf;
-	private int platinum;
-	private int gold;
-	private int silver;
-	private int bronze;
-	private String lastUpdated;
 	private int numberOfGames;
 
-	private List<PsnGameDataOfficial> psnGameList;
-	private final String jid;
+	private List<PsnGameDataOfficial> list;
+	private final PsnGameDataOfficial.Builder builder;
 
 	public HandlerXmlGame(final String jid) {
-		this.jid = jid;
+		builder = new PsnGameDataOfficial.Builder(jid);
 	}
 
 	public List<PsnGameDataOfficial> getGames() {
-		return psnGameList != null ? psnGameList
-				: new ArrayList<PsnGameDataOfficial>(numberOfGames);
+		return list != null ? list : new ArrayList<PsnGameDataOfficial>(
+				numberOfGames);
 	}
 
 	public String getResult() {
@@ -76,19 +69,22 @@ public final class HandlerXmlGame extends HandlerXml {
 	public void startElement(final String uri, final String localName,
 			final String qName, final Attributes attributes)
 			throws SAXException {
-		startTag = qLocal(qName, localName);
-		calledStartElement = true;
+		super.startElement(uri, localName, qName, attributes);
 
 		if (startTag.equalsIgnoreCase(NPTROPHY)) {
 			result = attributes.getValue("result");
 		} else if (startTag.equalsIgnoreCase(INFO)) {
-			npCommid = attributes.getValue(NPCOMMID);
-			pf = PlatformType.getPlatform(attributes.getValue(PF));
+			builder.setGameId(attributes.getValue(NPCOMMID));
+			builder.setPlatform(PlatformType.getPlatform(attributes
+					.getValue(PF)));
 		} else if (startTag.equalsIgnoreCase(TYPES)) {
-			platinum = Integer.parseInt(attributes.getValue(TYPES_PLATINUM));
-			gold = Integer.parseInt(attributes.getValue(TYPES_GOLD));
-			silver = Integer.parseInt(attributes.getValue(TYPES_SILVER));
-			bronze = Integer.parseInt(attributes.getValue(TYPES_BRONZE));
+			builder.setPlatinum(Integer.parseInt(attributes
+					.getValue(TYPES_PLATINUM)));
+			builder.setGold(Integer.parseInt(attributes.getValue(TYPES_GOLD)));
+			builder.setSilver(Integer.parseInt(attributes
+					.getValue(TYPES_SILVER)));
+			builder.setBronze(Integer.parseInt(attributes
+					.getValue(TYPES_BRONZE)));
 		}
 
 	}
@@ -96,17 +92,12 @@ public final class HandlerXmlGame extends HandlerXml {
 	@Override
 	public void endElement(final String uri, final String localName,
 			final String qName) throws SAXException {
-		final String qLocal = qLocal(qName, localName);
 
-		if (qLocal.equalsIgnoreCase(INFO)) {
+		if (qLocal(qName, localName).equalsIgnoreCase(INFO)) {
 
-			if (psnGameList == null) psnGameList = new ArrayList<PsnGameDataOfficial>(
+			if (list == null) list = new ArrayList<PsnGameDataOfficial>(
 					numberOfGames);
-
-			psnGameList.add(new PsnGameDataOfficial.Builder(jid)
-					.setPlatform(pf).setLastUpdated(lastUpdated)
-					.setGameId(npCommid).setPlatinum(platinum).setGold(gold)
-					.setSilver(silver).setBronze(bronze).build());
+			list.add(builder.build());
 		}
 
 	}
@@ -115,10 +106,12 @@ public final class HandlerXmlGame extends HandlerXml {
 	public void characters(final char[] ch, final int start, final int length)
 			throws SAXException {
 
-		if (calledStartElement) if (startTag.equalsIgnoreCase(TITLE)) numberOfGames = Integer
-				.parseInt(new String(ch, start, length));
-		else if (startTag.equalsIgnoreCase(LAST_UPDATED)) lastUpdated = new String(
-				ch, start, length);
+		if (calledStartElement) {
+			if (startTag.equalsIgnoreCase(TITLE)) numberOfGames = Integer
+					.parseInt(new String(ch, start, length));
+			else if (startTag.equalsIgnoreCase(LAST_UPDATED)) builder
+					.setLastUpdated(new String(ch, start, length));
+		}
 
 		calledStartElement = false;
 

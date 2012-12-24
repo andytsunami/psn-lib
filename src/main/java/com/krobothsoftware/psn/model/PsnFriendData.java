@@ -26,18 +26,18 @@ import com.krobothsoftware.psn.internal.ModelType;
  * 
  * @see PlayStationNetworkClient#getClientFriendList()
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public class PsnFriendData extends PsnModel implements PsnId {
 	private static final long serialVersionUID = -2725063559049803762L;
 	private final String psnId;
-	private final FriendStatus currentPresence;
-	private final String currentGame;
+	private final FriendStatus presence;
+	private final String game;
 	private final String avatar;
 	private final String comment;
-	private final boolean isPlayStationPlus;
+	private final boolean isPP;
 	private final int level;
 	private final int platinum;
 	private final int gold;
@@ -47,11 +47,11 @@ public class PsnFriendData extends PsnModel implements PsnId {
 	private PsnFriendData(final Builder builder) {
 		super(ModelType.UK_FRIEND_VERSION);
 		psnId = builder.psnId;
-		currentPresence = builder.currentPresence;
-		currentGame = builder.currentGame;
+		presence = builder.presence;
+		game = builder.game;
 		avatar = builder.avatar;
 		comment = builder.comment;
-		isPlayStationPlus = builder.isPlayStationPlus;
+		isPP = builder.isPP;
 		level = builder.level;
 		platinum = builder.platinum;
 		gold = builder.gold;
@@ -65,11 +65,11 @@ public class PsnFriendData extends PsnModel implements PsnId {
 	}
 
 	public FriendStatus getCurrentStatus() {
-		return currentPresence;
+		return presence;
 	}
 
 	public String getCurrentGame() {
-		return currentGame;
+		return game;
 	}
 
 	/**
@@ -90,7 +90,7 @@ public class PsnFriendData extends PsnModel implements PsnId {
 	}
 
 	public boolean isPlayStationPlus() {
-		return isPlayStationPlus;
+		return isPP;
 	}
 
 	public int getLevel() {
@@ -118,44 +118,40 @@ public class PsnFriendData extends PsnModel implements PsnId {
 
 	@Override
 	public String toString() {
-		return "PsnFriendData [onlineId=" + psnId + ", currentPresence="
-				+ currentPresence + ", currentGame=" + currentGame + "]";
+		return "PsnFriendData [onlineId=" + psnId + ", presence=" + presence
+				+ ", game=" + game + "]";
 	}
 
 	public static class Builder {
 		String psnId;
-		FriendStatus currentPresence;
-		String currentGame;
+		FriendStatus presence;
+		String game;
 		String avatar;
 		String comment;
-		boolean isPlayStationPlus;
+		boolean isPP;
 		int level;
 		int platinum;
 		int gold;
 		int silver;
 		int bronze;
 
-		public Builder(final String psnId) {
-			this.psnId = psnId;
-		}
-
 		public Builder setPsnId(final String psnId) {
 			this.psnId = psnId;
 			return this;
 		}
 
-		public Builder setCurrentPresence(final FriendStatus currentPresence) {
-			this.currentPresence = currentPresence;
+		public Builder setPresence(final FriendStatus presence) {
+			this.presence = presence;
 			return this;
 		}
 
-		public Builder setCurrentGame(final String currentGame) {
-			this.currentGame = currentGame;
+		public Builder setGame(final String game) {
+			this.game = game;
 			return this;
 		}
 
-		public Builder setCurrentAvatar(final String currentAvatar) {
-			avatar = currentAvatar;
+		public Builder setAvatar(final String avatar) {
+			this.avatar = avatar;
 			return this;
 		}
 
@@ -164,8 +160,8 @@ public class PsnFriendData extends PsnModel implements PsnId {
 			return this;
 		}
 
-		public Builder setPlaystationPlus(final boolean isPlaystationPlus) {
-			isPlayStationPlus = isPlaystationPlus;
+		public Builder setPP(final boolean isPP) {
+			this.isPP = isPP;
 			return this;
 		}
 

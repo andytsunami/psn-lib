@@ -27,7 +27,7 @@ import com.krobothsoftware.psn.internal.ModelType;
  * @see PlayStationNetworkClient#getClientGameList()
  * @see PlayStationNetworkClient#getPublicGameList(String)
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
@@ -36,7 +36,7 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 	private final String psnId;
 	private final String gameId;
 	private final String name;
-	private final String gameImage;
+	private final String image;
 	private final int progress;
 	private final int platinum;
 	private final int gold;
@@ -49,7 +49,7 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 		psnId = builder.userId;
 		gameId = builder.gameId;
 		name = builder.name;
-		gameImage = builder.gameImage;
+		image = builder.image;
 		progress = builder.progress;
 		platinum = builder.platinum;
 		gold = builder.gold;
@@ -73,8 +73,8 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 		return name;
 	}
 
-	public String getGameImage() {
-		return gameImage;
+	public String getImage() {
+		return image;
 	}
 
 	public int getProgress() {
@@ -115,7 +115,7 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 	public static class Builder extends BuilderGame<PsnGameData> {
 		ModelType version;
 		String name;
-		String gameImage;
+		String image;
 		int progress;
 
 		public Builder(final ModelType version, final String userId) {
@@ -129,8 +129,8 @@ public class PsnGameData extends PsnModel implements PsnGame, PsnId {
 			return this;
 		}
 
-		public Builder setGameImage(final String gameImage) {
-			this.gameImage = gameImage;
+		public Builder setImage(final String gameImage) {
+			this.image = gameImage;
 			return this;
 		}
 

@@ -28,35 +28,35 @@ import com.krobothsoftware.psn.internal.ModelType;
  * @see PlayStationNetworkClient#getClientTrophyList(String)
  * @see PlayStationNetworkClient#getPublicTrophyList(String, String, boolean)
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public class PsnTrophyData extends PsnModel implements PsnTrophy, PsnId {
 	private static final long serialVersionUID = -2664313320588242916L;
 	private final String psnId;
-	private final int trophyId;
+	private final int index;
 	private final String gameId;
 	private final String name;
-	private final String imageUrl;
+	private final String image;
 	private final String description;
 	private final String dateEarned;
-	private final TrophyType trophyType;
+	private final TrophyType type;
 	private final boolean isHidden;
 	private final boolean isReceived;
 
 	private PsnTrophyData(final Builder builder) {
 		super(builder.version);
 		psnId = builder.userId;
-		trophyId = builder.trophyId;
+		index = builder.index;
 		gameId = builder.gameId;
 		name = builder.name;
-		imageUrl = builder.imageUrl;
+		image = builder.image;
 		description = builder.description;
 		dateEarned = builder.dateEarned;
-		trophyType = builder.trophyType;
+		type = builder.type;
 		isHidden = builder.isHidden;
-		isReceived = builder.isReceived;
+		isReceived = (dateEarned != null) ? true : false;
 	}
 
 	@Override
@@ -64,12 +64,12 @@ public class PsnTrophyData extends PsnModel implements PsnTrophy, PsnId {
 		return psnId;
 	}
 
-	public String getTrophyName() {
+	public String getName() {
 		return name;
 	}
 
-	public String getTrophyImageUrl() {
-		return imageUrl;
+	public String getImage() {
+		return image;
 	}
 
 	public String getDescription() {
@@ -86,8 +86,8 @@ public class PsnTrophyData extends PsnModel implements PsnTrophy, PsnId {
 	}
 
 	@Override
-	public int getTrophyId() {
-		return trophyId;
+	public int getIndex() {
+		return index;
 	}
 
 	@Override
@@ -96,8 +96,8 @@ public class PsnTrophyData extends PsnModel implements PsnTrophy, PsnId {
 	}
 
 	@Override
-	public TrophyType getTrophyType() {
-		return trophyType;
+	public TrophyType getType() {
+		return type;
 	}
 
 	@Override
@@ -109,13 +109,13 @@ public class PsnTrophyData extends PsnModel implements PsnTrophy, PsnId {
 	public String toString() {
 		return String
 				.format("ModelTrophyImpl [trophyId=%s, name=%s, dateEarned=%s, trophyType=%s, isReceived=%s]",
-						trophyId, name, dateEarned, trophyType, isReceived);
+						index, name, dateEarned, type, isReceived);
 	}
 
 	public static class Builder extends BuilderTrophy<PsnTrophyData> {
 		ModelType version;
 		String name;
-		String imageUrl;
+		String image;
 		String description;
 		boolean isHidden;
 
@@ -129,8 +129,8 @@ public class PsnTrophyData extends PsnModel implements PsnTrophy, PsnId {
 			return this;
 		}
 
-		public Builder setImageUrl(final String imageUrl) {
-			this.imageUrl = imageUrl;
+		public Builder setImage(final String image) {
+			this.image = image;
 			return this;
 		}
 

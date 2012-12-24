@@ -20,54 +20,11 @@ package com.krobothsoftware.psn;
 /**
  * Trophy Types used with PSN
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public enum TrophyType {
-
-	PLATINUM {
-		@Override
-		public String getTrophyName() {
-			return STRING_PLATINUM;
-		}
-	},
-	GOLD {
-		@Override
-		public String getTrophyName() {
-			return STRING_GOLD;
-		}
-	},
-	SILVER {
-		@Override
-		public String getTrophyName() {
-			return STRING_SILVER;
-		}
-	},
-	BRONZE {
-		@Override
-		public String getTrophyName() {
-			return STRING_BRONZE;
-		}
-	},
-	HIDDEN {
-		@Override
-		public String getTrophyName() {
-			return STRING_HIDDEN;
-		}
-	};
-
-	private static final String STRING_PLATINUM = "Platinum";
-	private static final String STRING_GOLD = "Gold";
-	private static final String STRING_SILVER = "Silver";
-	private static final String STRING_BRONZE = "Bronze";
-	private static final String STRING_HIDDEN = "Hidden";
-
-	/**
-	 * Gets the trophy name. Not same as {@link Enum#toString()}.
-	 * 
-	 * @return trophy name
-	 */
-	public abstract String getTrophyName();
+	PLATINUM, GOLD, SILVER, BRONZE, HIDDEN;
 
 }

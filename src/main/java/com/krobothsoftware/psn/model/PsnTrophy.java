@@ -23,19 +23,19 @@ import com.krobothsoftware.psn.TrophyType;
  * 
  * Indicates model is a Psn Trophy with common methods.
  * 
- * @version 3.0
+ * @version 3.0.2
  * @since Nov 25 2012
  * @author Kyle Kroboth
  */
 public interface PsnTrophy {
 
-	int getTrophyId();
+	int getIndex();
 
 	String getGameId();
 
 	String getDateEarned();
 
-	TrophyType getTrophyType();
+	TrophyType getType();
 
 	boolean isReceived();
 
