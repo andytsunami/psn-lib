@@ -10,11 +10,13 @@ Sony hasn't published a _public_ API interface for retrieving psn info so develo
 
 While they are mostly server APIs, _psn-lib_ is a pure Java Library.
 
+Thanks to http://www.psnapi.com.ar/ for all the information they found.
+
 ##Client
 `PlayStationNetworkClient` is the client used to retrieve all network related data including profiles, games, and trophies.
 ````java
 PlayStationNetworkClient psnClient = new PlayStationNetworkClient();
-// need to call init in order to set up client
+// need to call init in order to set up client; authorizations, and cookies
 psnClient.init();
 ````
 The client is broken up into three types of data
@@ -26,8 +28,8 @@ The client is broken up into three types of data
 **Client Login**
 ````java
 try {
-  // progressListener is first argument, this case there is none. 
-  psnClient.clientLogin(null, "username", "password");
+  // progressListener is last argument, this case there is none. 
+  psnClient.clientLogin("username", "password",null);
 } catch (PlayStationNetworkException e) {
   // login was unsuccessful, which can mean if service is down
 } catch (PlayStationNetworkLoginException e) {
@@ -63,6 +65,10 @@ psnClient.getPublicGameList("psnId");
 ````
 `getPublicTrophyList()` does however need US Login to get _TICKET_ and _PSNS2STICKET_ cookies. `clientLogin` will get these cookies automatically. Both cookies are static meaning they don't change value so it's possible to generate them and insert into `CookieManager`. Methods `PsnUtils.createLoginCookieTicket()` and `PsnUtils.createLoginCookiePsnTicket()` will create them based on any valid psnId. Note that psnId used for cookies doesn't have to same as one being used in _getPublicTrophyList_
 
+*Release v3.0.2*
+
+Calling `init()` in the client will generate _TICKET_ and _PSNS2STICKET_ cookies based on the value '*' [asterisk]. It seems as long as the cookies exist, any value is valid. 
+
 **Official Games**
 ````java
 try {
@@ -91,6 +97,8 @@ Id is **582938-Warhawk**.
 `http://uk.playstation.com/psn/mypsn/trophies/detail/?title=4`
 Id is **4**.
 It can also be retrieved by `PsnGameData.getTitleLinkId()`
+
+**Trophy Index** is the index in which the trophy resides in a game.
 
 ##Network
 The client uses `com.krobothsoftware.commons.network` package as a helper for doing network connections, handling cookies, and authorizations.
@@ -152,14 +160,16 @@ Listening on connections for `networkHelper`
 </table>
 `AGENT_DEFAULT` is different depending on OS, and platform
 ````
-NetworkHelper/3.0.1 (Windows 7 6.1; Java 1.7.0_09)
-NetworkHelper/3.0.1 (Linux 3.0.31-00001-gf84bc96; samsung SCH-I500; Android 4.1.1)
+NetworkHelper/3.0.2 (Windows 7 6.1; Java 1.7.0_09)
+NetworkHelper/3.0.2 (Linux 3.0.31-00001-gf84bc96; samsung SCH-I500; Android 4.1.1)
 ````
 
 ##How to set up
-Go to [Downloads](https://github.com/KrobothSoftware/psn-lib/downloads) and get lastest release. It includes library, source, Javadoc, and dependencies, This project depends on the following libraries
-* [Html-Cleaner](http://htmlcleaner.sourceforge.net/) - For parsing Html Data(websites)
+Go to [Downloads](http://code.google.com/p/playstation-network/downloads/list) and get lastest release. It includes library, source, Javadoc, and dependencies, This project depends on the following libraries
+* [TagSoup](http://ccil.org/~cowan/XML/tagsoup/) - For parsing Html Data(websites)
 * [SLF4J](http://www.slf4j.org/) - Logging library
+
+Releases v3.0.1 and below require [Html-Cleaner] (http://htmlcleaner.sourceforge.net/) instead of TagSoup.
 
 There are two `krobothcommons-vXXX.jar`, one is for Android and other is SE. Make sure only to use one!
 
