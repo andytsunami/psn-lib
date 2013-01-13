@@ -173,4 +173,9 @@ Releases v3.0.1 and below require [Html-Cleaner] (http://htmlcleaner.sourceforge
 
 There are two `krobothcommons-vXXX.jar`, one is for Android and other is SE. Make sure only to use one!
 
+When working with Android, make sure to add internet permission in your manifest file.
+````xml
+<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+````
+
 [Changelog](https://github.com/KrobothSoftware/psn-lib/wiki/Changelog)
